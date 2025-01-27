@@ -11,9 +11,6 @@ public class BaseResponse<T> {
     private int status;
     private T data;
 
-    public BaseResponse() {
-    }
-
     public BaseResponse(String message, boolean success, int status) {
         this.message = message;
         this.success = success;
