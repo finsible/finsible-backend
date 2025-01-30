@@ -4,6 +4,8 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.SignatureException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.spec.SecretKeySpec;
@@ -14,9 +16,11 @@ import java.util.Date;
 public class JwtService {
     private static final String secretKey= System.getenv("SECRET_KEY");
     private static final long jwtExpiration= Long.parseLong(System.getenv("JWT_EXPIRATION"));
+    private static final Logger logger = LoggerFactory.getLogger(JwtService.class);
 
     public static String generateToken(String userId) {
         Key key = new SecretKeySpec(secretKey.getBytes(), SignatureAlgorithm.HS256.getJcaName());
+        logger.info("Generating token for user {}", userId);
         return Jwts.builder()
                 .setSubject(userId)
                 .setIssuedAt(new Date())
@@ -34,6 +38,7 @@ public class JwtService {
                     .parseClaimsJws(token)
                     .getBody();
         } catch (SignatureException e) {
+            logger.error("Invalid JWT signature");
             throw new RuntimeException("Invalid JWT signature");
         }
     }
