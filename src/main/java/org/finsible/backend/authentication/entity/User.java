@@ -1,9 +1,6 @@
 package org.finsible.backend.authentication.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -27,14 +24,10 @@ public class User{
     @Id
     @Column(name="id")
     private String id;
-    @Column(name="lastLoggedIn")
 
     private String lastLoggedIn;
-    @Column(name="categoriesEdited")
-
     private boolean categoriesEdited;
 
-    @Column(name="accountCreated")
     private String accountCreated;
 
     public User(String email, String name, String picture, String id, String lastLoggedIn, boolean categoriesEdited, String accountCreated) {

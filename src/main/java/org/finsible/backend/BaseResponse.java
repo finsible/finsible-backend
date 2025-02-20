@@ -10,6 +10,8 @@ public class BaseResponse<T> {
     private boolean success;
     private int status;
     private T data;
+    private Object additionalInfo;
+    private ErrorDetails errorDetails;
 
     public BaseResponse(String message, boolean success, int status) {
         this.message = message;

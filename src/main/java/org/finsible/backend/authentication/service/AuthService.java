@@ -57,9 +57,10 @@ public class AuthService {
 
                 User user = userRepository.findById(userId).orElse(null);
                 boolean isNewUser = user == null;
-
+                int status;
                 // if user is null then create a new user and define the isNewUser and accountCreated as true
                 if (user == null) {
+                    status=201;  // for created
                     user = new User(email, name, picture, userId, lastLoggedIn, categoriesEdited, lastLoggedIn);
                     userRepository.save(user);
                 } else {
@@ -67,13 +68,13 @@ public class AuthService {
                     user.setLastLoggedIn(lastLoggedIn);
                     user.setName(name);
                     user.setPicture(picture);
-
+                    status=200;
                     // update user in database
                     userRepository.save(user);
                 }
                 String jwt = authenticateAndGenerateToken(user.getId());
                 UserData userData = new UserData(isNewUser, user.getId(), user.getEmail(), user.getName(), user.getPicture(), user.getAccountCreated(), user.getLastLoggedIn(), jwt);
-                response = new BaseResponse<>("You are successfully logged in.",true, 200 ,userData);
+                response = new BaseResponse<>("You are successfully logged in.",true, status ,userData);
                 logger.info("User logged in successfully with email: {}", email);
                 return response;
             }
