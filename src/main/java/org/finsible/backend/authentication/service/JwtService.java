@@ -19,7 +19,7 @@ public class JwtService {
     private static final Logger logger = LoggerFactory.getLogger(JwtService.class);
 
     public static String generateToken(String userId) {
-        Key key = new SecretKeySpec(secretKey.getBytes(), SignatureAlgorithm.HS256.getJcaName());
+        Key key = new SecretKeySpec(secretKey.getBytes(), SignatureAlgorithm.HS256.getJcaName()); //return "HmacSHA256
         logger.info("Generating token for user {}", userId);
         return Jwts.builder()
                 .setSubject(userId)

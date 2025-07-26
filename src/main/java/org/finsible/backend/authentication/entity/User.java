@@ -2,13 +2,9 @@ package org.finsible.backend.authentication.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 
 @Data
 @Entity
-@Setter
-@Getter
 @Table(name = "Users")
 public class User{
 
@@ -21,7 +17,7 @@ public class User{
     @Column(name="picture")
     private String picture;
 
-    @Id
+    @Id // if we use id without generated value - we need to set it manually
     @Column(name="id")
     private String id;
 

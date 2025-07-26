@@ -20,12 +20,14 @@ public class SecurityConfiguration { //middleware
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http.csrf(AbstractHttpConfigurer::disable)
+        return http.csrf(AbstractHttpConfigurer::disable)  //jwt tokens are not vulnerable to CSRF attacks
+                //browsers do not automatically add custom HTTP headers like Authorization: Bearer <token> to cross-origin requests.
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**", "/actuator/**", "/health").permitAll() // Allow authentication endpoints
                         .anyRequest().authenticated() // Protect other endpoints
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // stateless meaning no session will be created/stored - each request is required to have jwt for authentication
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class).build();
     }
 }
