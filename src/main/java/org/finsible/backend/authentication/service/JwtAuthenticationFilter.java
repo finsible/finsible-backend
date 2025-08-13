@@ -44,7 +44,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = null;
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             token = authorizationHeader.substring(7);
-        } else if (jwtFromCookie != null) {
+        }
+        if (jwtFromCookie != null) {
             token = jwtFromCookie;
         }
 
@@ -69,7 +70,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             logger.error("{} {}", e.getMessage(), getClass());
             clearAuthenticationCookies(response);
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Invalid or expired token");
+            response.getWriter().write("Invalid request");
             return;
         }
 

@@ -74,14 +74,12 @@ public class AuthService {
                 String name = (String) payload.get("name");
                 String picture = (String) payload.get("picture");
                 String lastLoggedIn = LocalDateTime.now().toString();
-                boolean categoriesEdited = false; //handle later
-
                 User user = userRepository.findById(userId).orElse(null);
                 boolean isNewUser = user == null;
 
                 // if user is null then create a new user and define the isNewUser and accountCreated as true
                 if (isNewUser) {
-                    user = new User(email, name, picture, userId, lastLoggedIn, categoriesEdited, lastLoggedIn);
+                    user = new User(email, name, picture, userId, lastLoggedIn, lastLoggedIn);
                     userRepository.save(user);
                     // create cash account under cash account group
                     ObjectMapper objectMapper = new ObjectMapper();
