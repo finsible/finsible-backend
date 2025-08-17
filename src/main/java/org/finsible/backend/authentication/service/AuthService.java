@@ -152,6 +152,42 @@ public class AuthService {
         return ResponseEntity.internalServerError().body(response);
     }
 
+    public ResponseEntity<BaseResponse<UserData>> getUser(String userId, String deviceType, HttpServletResponse httpServletResponse) {
+        BaseResponse<UserData> response;
+        try {
+            User user = userRepository.findById(userId).orElse(null);
+            if (user == null) {
+                response = new BaseResponse<>(AppConstants.USER_NOT_FOUND, false);
+                return ResponseEntity.status(AppConstants.UNAUTHORIZED_REQUEST).body(response);
+            }
+            UserData userData = new UserData(false, user.getId(), user.getEmail(), user.getName(), user.getPicture(), user.getAccountCreated(), user.getLastLoggedIn(), null);
+            response = new BaseResponse<>("Data fetched successfully", true, userData);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return errorHandler(e, deviceType, httpServletResponse, new BaseResponse<>(AppConstants.RESPONSE_ERROR_MESSAGE, false));
+        }
+    }
+
+    public ResponseEntity<BaseResponse<UserData>> logout(String userId, String deviceType, HttpServletResponse httpServletResponse) {
+        BaseResponse<UserData> response;
+        try {
+            User user = userRepository.findById(userId).orElse(null);
+            if (user == null) {
+                response = new BaseResponse<>(AppConstants.USER_NOT_FOUND, false);
+                return ResponseEntity.status(AppConstants.UNAUTHORIZED_REQUEST).body(response);
+            }
+            // Clear cookies on logout
+            if(deviceType.equals(AppConstants.DEVICE_WEB)) {
+                httpServletResponse.addCookie(getJwtCookie("", 0)); // Expire JWT cookie
+                httpServletResponse.addCookie(getAuthCookie("false"));
+            }
+            response = new BaseResponse<>("Logged out successfully", true);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return errorHandler(e, deviceType, httpServletResponse, new BaseResponse<>(AppConstants.RESPONSE_ERROR_MESSAGE, false));
+        }
+    }
+
     @NotNull // method returns a non-null Cookie object always
     private static Cookie getJwtCookie(String jwtToken, int expiry) {
         Cookie jwtCookie = new Cookie("jwt_token", jwtToken);

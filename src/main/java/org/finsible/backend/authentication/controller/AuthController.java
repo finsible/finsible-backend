@@ -25,4 +25,14 @@ public class AuthController {
     public ResponseEntity<BaseResponse<UserData>> googleSignInWithCode(@RequestParam String code, @RequestParam String clientId, @RequestParam String deviceType, HttpServletResponse response) {
         return authService.googleSignInWithCode(code, clientId, deviceType, response);
     }
+
+    @GetMapping("/user")
+    public ResponseEntity<BaseResponse<UserData>> getUser(@RequestAttribute String userId, @RequestParam String deviceType, HttpServletResponse response) {
+        return authService.getUser(userId, deviceType, response);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<BaseResponse<UserData>> logout(@RequestAttribute String userId, @RequestParam String deviceType, HttpServletResponse response) {
+        return authService.logout(userId, deviceType, response);
+    }
 }
