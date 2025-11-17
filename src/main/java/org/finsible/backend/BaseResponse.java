@@ -10,8 +10,6 @@ public class BaseResponse<T> {
     private boolean success;
     private String timestamp;
     private T data;
-    private Object additionalInfo;
-    private ErrorDetails errorDetails;
 
     public BaseResponse(String message, boolean success) {
         this.message = message;

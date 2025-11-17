@@ -1,7 +1,6 @@
 package org.finsible.backend.controller;
 
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
 import org.finsible.backend.AppConstants;
 import org.finsible.backend.BaseResponse;
 import org.finsible.backend.dto.request.UserAuthenticationRequestDTO;
