@@ -1,4 +1,4 @@
-package org.finsible.backend.authentication.service;
+package org.finsible.backend.service;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -11,6 +11,9 @@ import org.springframework.stereotype.Service;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class JwtService {
@@ -18,10 +21,13 @@ public class JwtService {
     private static final long jwtExpiration= Long.parseLong(System.getenv("JWT_EXPIRATION"));
     private static final Logger logger = LoggerFactory.getLogger(JwtService.class);
 
-    public static String generateToken(String userId) {
+    public static String generateToken(String userId, List<String> roles) {
         Key key = new SecretKeySpec(secretKey.getBytes(), SignatureAlgorithm.HS256.getJcaName()); //return "HmacSHA256
         logger.info("Generating token for user {}", userId);
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("roles", roles);
         return Jwts.builder()
+                .setClaims(claims)
                 .setSubject(userId)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
