@@ -134,7 +134,7 @@ public class AccountService {
         } else if (AppConstants.DEBIT_CARD_ACCOUNT_TYPE.equals(accountGroupName) && debitCardDetail != null) {
             accountMapper.debitCardAccountResponse(debitCardDetail, responseDTO);
         } else if (AppConstants.LOAN_ACCOUNT_TYPE.equals(accountGroupName) && loanDetail != null) {
-            // todo : implement loan type of accounts
+            // TODO: implement loan type of accounts
             //accountMapper.LoanAccountResponse(loanDetail, responseDTO);
         }
         return responseDTO;
