@@ -16,7 +16,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class AccountService {
@@ -26,19 +30,22 @@ public class AccountService {
     private final SupportedCurrencyRepository currencyRepository;
     private final CreditCardDetailRepository creditCardDetailRepository;
     private final DebitCardDetailsRepository debitCardDetailRepository;
+    private final LoanDetailRepository loanDetailRepository;
     private final AccountMapper accountMapper;
 
-    public static final Logger logger = LoggerFactory.getLogger(AccountService.class);
+    private static final Logger logger = LoggerFactory.getLogger(AccountService.class);
 
     public AccountService(AccountRepository accountRepository, UserRepository userRepository, AccountGroupRepository accountGroupRepository,
                           AccountMapper accountMapper, SupportedCurrencyRepository currencyRepository,
-                          CreditCardDetailRepository creditCardDetailRepository, DebitCardDetailsRepository debitCardDetailRepository) {
+                          CreditCardDetailRepository creditCardDetailRepository, DebitCardDetailsRepository debitCardDetailRepository,
+                          LoanDetailRepository loanDetailRepository) {
         this.currencyRepository = currencyRepository;
         this.accountRepository = accountRepository;
         this.userRepository = userRepository;
         this.accountGroupRepository = accountGroupRepository;
         this.creditCardDetailRepository = creditCardDetailRepository;
         this.debitCardDetailRepository = debitCardDetailRepository;
+        this.loanDetailRepository = loanDetailRepository;
         this.accountMapper = accountMapper;
     }
 
@@ -54,7 +61,7 @@ public class AccountService {
         if(currency == null) currency = user.getDefaultCurrency();
 
         Account account = accountMapper.toAccount(accountRequestDTO);
-        if(account.getBalance() == null) account.setBalance(new BigDecimal(0));
+        if(account.getBalance() == null) account.setBalance(BigDecimal.ZERO);
         account.setUser(user);
         account.setAccountGroup(accountGroup);
         account.setCurrency(currency);
@@ -70,11 +77,70 @@ public class AccountService {
     public List<AccountResponseDTO> getAccounts(String userId) {
         List<Account> accounts = accountRepository.findAccountsByUser_Id(userId);
         logger.info("Found {} accounts for user {}", accounts.size(), userId);
+
+        Map<String, List<Long>> accountIdsByType = accounts.stream()
+                .collect(Collectors.groupingBy(
+                        account -> account.getAccountGroup().getName(),  // Group by type
+                        Collectors.mapping(Account::getId, Collectors.toList())  // Collect IDs
+                ));
+
+        Map<Long, CreditCardDetail> creditCardDetailMap;
+        Map<Long, DebitCardDetail> debitCardDetailMap;
+        Map<Long, LoanDetail> loanDetailMap;
+
+        if(accountIdsByType.containsKey(AppConstants.CREDIT_CARD_ACCOUNT_TYPE)){
+            List<Long> creditCardAccountIds = accountIdsByType.get(AppConstants.CREDIT_CARD_ACCOUNT_TYPE);
+            List<CreditCardDetail> creditCardDetails = creditCardDetailRepository.findAllById(creditCardAccountIds);
+            creditCardDetailMap = creditCardDetails.stream()
+                    .collect(Collectors.toMap(CreditCardDetail::getAccountId, Function.identity()));
+        } else {
+            creditCardDetailMap = new HashMap<>();
+        }
+        if(accountIdsByType.containsKey(AppConstants.DEBIT_CARD_ACCOUNT_TYPE)){
+            List<Long> debitCardAccountIds = accountIdsByType.get(AppConstants.DEBIT_CARD_ACCOUNT_TYPE);
+            List<DebitCardDetail> debitCardDetails = debitCardDetailRepository.findAllById(debitCardAccountIds);
+            debitCardDetailMap = debitCardDetails.stream()
+                    .collect(Collectors.toMap(DebitCardDetail::getAccountId, Function.identity()));
+        } else {
+            debitCardDetailMap = new HashMap<>();
+        }
+        if(accountIdsByType.containsKey(AppConstants.LOAN_ACCOUNT_TYPE)){
+            List<Long> loanAccountIds = accountIdsByType.get(AppConstants.LOAN_ACCOUNT_TYPE);
+            // Assuming loanDetailRepository is defined and injected
+            List<LoanDetail> loanDetails = loanDetailRepository.findAllById(loanAccountIds);
+            loanDetailMap = loanDetails.stream()
+                    .collect(Collectors.toMap(LoanDetail::getAccountId, Function.identity()));
+        } else {
+            loanDetailMap = new HashMap<>();
+        }
+
         return accounts.stream()
-                .map(accountMapper::toAccountResponseDTO)
+                .map( account -> mapAccountWithDetails(account, creditCardDetailMap.get(account.getId()),
+                        debitCardDetailMap.get(account.getId()),
+                        loanDetailMap.get(account.getId())) )
                 .toList();
     }
 
+    private AccountResponseDTO mapAccountWithDetails(
+            Account account,
+            CreditCardDetail creditCardDetail,
+            DebitCardDetail debitCardDetail,
+            LoanDetail loanDetail) {
+        AccountResponseDTO responseDTO = accountMapper.toAccountResponseDTO(account);
+        String accountGroupName = account.getAccountGroup().getName();
+
+        if (AppConstants.CREDIT_CARD_ACCOUNT_TYPE.equals(accountGroupName) && creditCardDetail != null) {
+            accountMapper.creditCardAccountResponse(creditCardDetail, responseDTO);
+        } else if (AppConstants.DEBIT_CARD_ACCOUNT_TYPE.equals(accountGroupName) && debitCardDetail != null) {
+            accountMapper.debitCardAccountResponse(debitCardDetail, responseDTO);
+        } else if (AppConstants.LOAN_ACCOUNT_TYPE.equals(accountGroupName) && loanDetail != null) {
+            // TODO: implement loan type of accounts
+            //accountMapper.LoanAccountResponse(loanDetail, responseDTO);
+        }
+        return responseDTO;
+    }
+
+    @Transactional
     public void deleteAccount(String userId, Long accountId) throws BadRequestException {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: "+userId));
@@ -129,7 +195,6 @@ public class AccountService {
         }
 
         Account account = accountMapper.toAccount(creditCardAccountRequestDTO);
-//        if (account.getBalance() == null) account.setBalance(BigDecimal.ZERO);
         account.setUser(user);
         account.setAccountGroup(accountGroup);
         account.setCurrency(currency);
@@ -139,40 +204,29 @@ public class AccountService {
         logger.info("Created credit card account with id {}", account.getId());
 
         // attach credit card detail
-        CreditCardDetail cc = accountMapper.toCreditCardDetail(creditCardAccountRequestDTO);
-        cc.setAccount(account);
+        CreditCardDetail creditCardDetail = accountMapper.toCreditCardDetail(creditCardAccountRequestDTO);
+        creditCardDetail.setAccount(account);
 
-        if(cc.getBillingDate() == null){
-            cc.setBillingDate(1); // default to 1st of month
+        if(creditCardDetail.getBillingDate() == null){
+            creditCardDetail.setBillingDate(1); // default to 1st of month
         }
-        if(cc.getDueDate() == null){
-            cc.setDueDate(20); // default to 20th of month
+        if(creditCardDetail.getDueDate() == null){
+            creditCardDetail.setDueDate(20); // default to 20th of month
         }
 
         // handle auto-pay account linking
-        if(cc.getAutoPayEnabled()){
+        if(creditCardAccountRequestDTO.getAutoPayEnabled()){
             Long autoPayFromAccountId = creditCardAccountRequestDTO.getAutoPayFromAccountId();
-            if(autoPayFromAccountId != null){
-                Account autoPayFromAccount = accountRepository.findByIdAndUser(autoPayFromAccountId, user);
-                if(autoPayFromAccount == null){
-                    throw new EntityNotFoundException("Auto pay from account not found");
-                }
-                // auto-pay from account must belong to bank account group
-                if(!autoPayFromAccount.getAccountGroup().getName().equals(AppConstants.BANK_ACCOUNT_TYPE)){
-                    throw new BadRequestException("Auto pay from account must belong to bank account group");
-                }
-                cc.setAutoPayFromAccount(autoPayFromAccount);
-            } else {
-                throw new EntityNotFoundException("Auto pay from account id must be provided when auto pay is enabled");
-            }
+            Account autoPayFromAccount = findAndValidateBankAccountForUser(autoPayFromAccountId, user, "Auto pay");
+            creditCardDetail.setAutoPayFromAccount(autoPayFromAccount);
         }
 
-        creditCardDetailRepository.save(cc);
+        creditCardDetailRepository.save(creditCardDetail);
         logger.info("Created credit-card account details with id {}", account.getId());
 
         AccountResponseDTO responseDTO = accountMapper.toAccountResponseDTO(account);
         // populate credit card specific fields
-        accountMapper.CreditCardAccountResponse(cc, responseDTO);
+        accountMapper.creditCardAccountResponse(creditCardDetail, responseDTO);
 
         return responseDTO;
     }
@@ -183,29 +237,28 @@ public class AccountService {
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
         Account account = accountRepository.findByIdAndUser(accountId, user);
         if (account == null) throw new EntityNotFoundException("Credit card account not found");
-        CreditCardDetail ccDetail = creditCardDetailRepository.findById(accountId)
+        CreditCardDetail creditCardDetail = creditCardDetailRepository.findById(accountId)
                 .orElseThrow(() -> new EntityNotFoundException("Credit card details not found for account id: " + accountId));
 
         AccountResponseDTO existingAccountResponseDTO = accountMapper.toAccountResponseDTO(account);
-        accountMapper.CreditCardAccountResponse(ccDetail, existingAccountResponseDTO);
+        accountMapper.creditCardAccountResponse(creditCardDetail, existingAccountResponseDTO);
 
-        if(creditCardAccountRequestDTO.getAutoPayEnabled() != null && creditCardAccountRequestDTO.getAutoPayEnabled() && creditCardAccountRequestDTO.getAutoPayFromAccountId() != null){
-            Account autoPayFromAccount = accountRepository.findByIdAndUser(creditCardAccountRequestDTO.getAutoPayFromAccountId(), user);
-            if(autoPayFromAccount == null){
-                throw new EntityNotFoundException("Auto pay from account not found");
-            }
-            // auto-pay from account must belong to bank account group
-            if(!autoPayFromAccount.getAccountGroup().getName().equals(AppConstants.BANK_ACCOUNT_TYPE)){
-                throw new BadRequestException("Auto pay from account must belong to bank account group");
+        if(creditCardAccountRequestDTO.getAutoPayEnabled() != null){
+            if(creditCardAccountRequestDTO.getAutoPayEnabled()){
+                Account autoPayFromAccount = findAndValidateBankAccountForUser(creditCardAccountRequestDTO.getAutoPayFromAccountId(), user, "Auto pay");
+                creditCardDetail.setAutoPayFromAccount(autoPayFromAccount);
+            } else {
+                // if disabling auto-pay, clear the linked account
+                creditCardDetail.setAutoPayFromAccount(null);
             }
         }
 
         accountMapper.updateAccountFromDto(creditCardAccountRequestDTO, account);
-        accountMapper.updateCreditCardDetailFromDto(creditCardAccountRequestDTO, ccDetail);
+        accountMapper.updateCreditCardDetailFromDto(creditCardAccountRequestDTO, creditCardDetail);
 
         AccountResponseDTO responseDTO = accountMapper.toAccountResponseDTO(account);
         // populate credit card specific fields
-        accountMapper.CreditCardAccountResponse(ccDetail, responseDTO);
+        accountMapper.creditCardAccountResponse(creditCardDetail, responseDTO);
 
         // to avoid unnecessary database writes
         if(existingAccountResponseDTO.equals(responseDTO)){
@@ -216,8 +269,8 @@ public class AccountService {
         logger.info("Updated credit card account with id {}", account.getId());
 
         // update credit card details
-        creditCardDetailRepository.save(ccDetail);
-        logger.info("Updated credit card account details with id {}", ccDetail.getAccountId());
+        creditCardDetailRepository.save(creditCardDetail);
+        logger.info("Updated credit card account details with id {}", creditCardDetail.getAccountId());
 
         return responseDTO;
     }
@@ -238,16 +291,9 @@ public class AccountService {
             debitCardAccountRequestDTO.setIsActive(true);
         }
         Account debitCardAccount = accountMapper.toAccount(debitCardAccountRequestDTO);
-        Account linkedBankAccount = accountRepository.findByIdAndUser(debitCardAccountRequestDTO.getLinkedBankAccountId(), user);
-        if(linkedBankAccount == null){
-            throw new EntityNotFoundException("Linked bank account not found");
-        }
-        // linked bank account must belong to bank account group
-        if(!linkedBankAccount.getAccountGroup().getName().equals(AppConstants.BANK_ACCOUNT_TYPE)){
-            throw new BadRequestException("Linked bank account must belong to bank account group");
-        }
+        Account linkedBankAccount = findAndValidateBankAccountForUser(debitCardAccountRequestDTO.getLinkedBankAccountId(), user, "Linked bank");
+        // we should always use the debit card account balance from the linked bank account when needed as storing balance here may lead to inconsistencies
 
-        debitCardAccount.setBalance(linkedBankAccount.getBalance());
         debitCardAccount.setUser(user);
         debitCardAccount.setAccountGroup(accountGroup);
         debitCardAccount.setCurrency(currency);
@@ -256,16 +302,16 @@ public class AccountService {
         logger.info("Created debit card account with id {}", debitCardAccount.getId());
 
         // attach debit card detail
-        DebitCardDetail dc = accountMapper.toDebitCardDetail(debitCardAccountRequestDTO);
-        dc.setAccount(debitCardAccount);
-        dc.setLinkedBankAccount(linkedBankAccount);
-        debitCardDetailRepository.save(dc);
+        DebitCardDetail debitCardDetail = accountMapper.toDebitCardDetail(debitCardAccountRequestDTO);
+        debitCardDetail.setAccount(debitCardAccount);
+        debitCardDetail.setLinkedBankAccount(linkedBankAccount);
+        debitCardDetailRepository.save(debitCardDetail);
 
         logger.info("Created debit-card account details with id {}", debitCardAccount.getId());
 
         AccountResponseDTO responseDTO = accountMapper.toAccountResponseDTO(debitCardAccount);
         // populate debit card specific fields
-        accountMapper.DebitCardAccountResponse(dc, responseDTO);
+        accountMapper.debitCardAccountResponse(debitCardDetail, responseDTO);
 
         return responseDTO;
     }
@@ -278,30 +324,23 @@ public class AccountService {
         Account account = accountRepository.findByIdAndUser(accountId, user);
         if (account == null) throw new EntityNotFoundException("Debit card account not found");
 
-        DebitCardDetail dcDetail = debitCardDetailRepository.findById(accountId)
+        DebitCardDetail debitCardDetail = debitCardDetailRepository.findById(accountId)
                 .orElseThrow(() -> new EntityNotFoundException("Debit card details not found for account id: " + accountId));
 
         AccountResponseDTO existingAccountResponseDTO = accountMapper.toAccountResponseDTO(account);
-        accountMapper.DebitCardAccountResponse(dcDetail, existingAccountResponseDTO);
+        accountMapper.debitCardAccountResponse(debitCardDetail, existingAccountResponseDTO);
 
         if (debitCardAccountRequestDTO.getLinkedBankAccountId() != null) {
-            Account linkedBankAccount = accountRepository.findByIdAndUser(debitCardAccountRequestDTO.getLinkedBankAccountId(), user);
-            if (linkedBankAccount == null) {
-                throw new EntityNotFoundException("Linked bank account not found");
-            }
-            // linked bank account must belong to bank account group
-            if (!linkedBankAccount.getAccountGroup().getName().equals(AppConstants.BANK_ACCOUNT_TYPE)) {
-                throw new BadRequestException("Linked bank account must belong to bank account group");
-            }
-            dcDetail.setLinkedBankAccount(linkedBankAccount);
+            Account linkedBankAccount = findAndValidateBankAccountForUser(debitCardAccountRequestDTO.getLinkedBankAccountId(), user, "Linked bank");
+            debitCardDetail.setLinkedBankAccount(linkedBankAccount);
         }
 
         accountMapper.updateAccountFromDto(debitCardAccountRequestDTO, account);
-        accountMapper.updateDebitCardDetailFromDto(debitCardAccountRequestDTO, dcDetail);
+        accountMapper.updateDebitCardDetailFromDto(debitCardAccountRequestDTO, debitCardDetail);
 
         AccountResponseDTO responseDTO = accountMapper.toAccountResponseDTO(account);
         // populate debit card specific fields
-        accountMapper.DebitCardAccountResponse(dcDetail, responseDTO);
+        accountMapper.debitCardAccountResponse(debitCardDetail, responseDTO);
 
         // to avoid unnecessary database writes
         if(existingAccountResponseDTO.equals(responseDTO)){
@@ -312,9 +351,27 @@ public class AccountService {
         logger.info("Updated debit card account with id {}", account.getId());
 
         // update debit card details
-        debitCardDetailRepository.save(dcDetail);
-        logger.info("Updated debit card account details with id {}", dcDetail.getAccountId());
+        debitCardDetailRepository.save(debitCardDetail);
+        logger.info("Updated debit card account details with id {}", debitCardDetail.getAccountId());
 
         return responseDTO;
+    }
+
+    private Account findAndValidateBankAccountForUser(Long accountId, User user, String field) throws BadRequestException {
+        if(accountId == null){
+            logger.error("{} account id is null", field);
+            throw new BadRequestException(field + " account must be provided");
+        }
+        Account account = accountRepository.findByIdAndUser(accountId, user);
+        if (account == null) {
+            logger.error("Account with id {} not found", accountId);
+            throw new EntityNotFoundException(field + " account not found");
+        }
+        if (!account.getAccountGroup().getName().equals(AppConstants.BANK_ACCOUNT_TYPE)) {
+            logger.error("{} account must belong to bank account group", field);
+            throw new BadRequestException(field + " account must belong to bank account group");
+        }
+        logger.debug("Found and validated account with id {} for field : {}", accountId, field);
+        return account;
     }
 }

@@ -24,10 +24,10 @@ public interface AccountMapper {
     AccountResponseDTO toAccountResponseDTO(Account account);
 
     @Mapping(source = "autoPayFromAccount.id", target = "autoPayFromAccountId")
-    void CreditCardAccountResponse(CreditCardDetail creditCardDetail, @MappingTarget AccountResponseDTO accountResponseDTO);
+    void creditCardAccountResponse(CreditCardDetail creditCardDetail, @MappingTarget AccountResponseDTO accountResponseDTO);
 
     @Mapping(source = "linkedBankAccount.id", target = "linkedBankAccountId")
-    void DebitCardAccountResponse(DebitCardDetail debitCardDetail, @MappingTarget AccountResponseDTO accountResponseDTO);
+    void debitCardAccountResponse(DebitCardDetail debitCardDetail, @MappingTarget AccountResponseDTO accountResponseDTO);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateAccountFromDto(AccountRequestDTO dto, @MappingTarget Account account);
