@@ -371,7 +371,7 @@ public class AccountService {
             logger.error("{} account must belong to bank account group", field);
             throw new BadRequestException(field + " account must belong to bank account group");
         }
-        logger.debug("Found and validated account with id {} for field : {}", field, accountId);
+        logger.debug("Found and validated account with id {} for field : {}", accountId, field);
         return account;
     }
 }
