@@ -1,11 +1,17 @@
 package org.finsible.backend.controller;
 
+import org.apache.coyote.BadRequestException;
 import org.finsible.backend.BaseResponse;
+import org.finsible.backend.dto.request.CategoryRequestDTO;
+import org.finsible.backend.dto.request.groups.Create;
+import org.finsible.backend.dto.request.groups.Update;
+import org.finsible.backend.dto.response.CategoryResponseDTO;
 import org.finsible.backend.entity.Category;
 import org.finsible.backend.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,36 +25,53 @@ public class CategoryController {
     public void setCategoryController(CategoryService categoryService) {
         this.categoryService = categoryService;
     }
-    // todo: fetch it based on transaction type
+
     @GetMapping("/all")
-    public ResponseEntity<BaseResponse<List<Category>>> getCategories(@RequestAttribute("userId") String userId) {
-       return categoryService.getCategories(userId);
+    public ResponseEntity<BaseResponse<List<CategoryResponseDTO>>> getCategories(@RequestAttribute("userId") String userId) {
+       return ResponseEntity.ok(new BaseResponse<>("Categories fetched successfully", true, categoryService.getAllCategories(userId)));
     }
 
     @GetMapping("/type/{type}")
-    public ResponseEntity<BaseResponse<List<Category>>> getCategoriesByType(@RequestAttribute("userId") String userId, @PathVariable Category.CategoryType type) {
-        return categoryService.getCategoriesByType(userId, type);
+    public ResponseEntity<BaseResponse<List<CategoryResponseDTO>>> getCategoriesByType(@RequestAttribute("userId") String userId, @PathVariable Category.CategoryType type) {
+        return ResponseEntity.ok(new BaseResponse<>("Categories of type " + type + " fetched successfully", true, categoryService.getCategoriesByType(userId, type)));
     }
 
-    // for admin use only
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    @PostMapping("/default")
-    public ResponseEntity<BaseResponse<Category>> createDefaultCategory(@RequestBody Category category) {
-        return categoryService.createDefaultCategory(category);
+    @PostMapping("/default/")
+    public ResponseEntity<BaseResponse<CategoryResponseDTO>> createDefaultCategory(@Validated(Create.class) @RequestBody CategoryRequestDTO categoryRequestDTO)
+            throws BadRequestException {
+        return ResponseEntity.ok(new BaseResponse<>("Default category created successfully", true, categoryService.createDefaultCategory(categoryRequestDTO)));
     }
 
-    @PostMapping("/user")
-    public ResponseEntity<BaseResponse<Category>> createUserCategory(@RequestAttribute("userId") String userId, @RequestBody Category category) {
-        return categoryService.createUserCategory(userId, category);
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PutMapping("/default/{id}")
+    public ResponseEntity<BaseResponse<CategoryResponseDTO>> updateDefaultCategory(@PathVariable Long id, @Validated(Update.class) @RequestBody CategoryRequestDTO categoryRequestDTO)
+            throws BadRequestException {
+        return ResponseEntity.ok(new BaseResponse<>("Default category updated successfully", true, categoryService.updateDefaultCategory(id, categoryRequestDTO)));
     }
 
-    @PutMapping("/user")
-    public ResponseEntity<BaseResponse<Category>> updateUserCategory(@RequestAttribute("userId") String userId, @RequestBody Category category) {
-        return categoryService.updateUserCategory(userId, category);
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @DeleteMapping("/default/{id}")
+    public ResponseEntity<BaseResponse<Void>> deleteDefaultCategory(@PathVariable Long id) {
+        categoryService.deleteDefaultCategory(id);
+        return ResponseEntity.ok(new BaseResponse<>("Default category deleted successfully", true));
     }
 
-    @DeleteMapping("/user/{categoryId}")
-    public ResponseEntity<BaseResponse<Category>> deleteUserCategory(@RequestAttribute("userId") String userId, @PathVariable Long categoryId) {
-        return categoryService.deleteUserCategory(userId, categoryId);
+    @PostMapping("/")
+    public ResponseEntity<BaseResponse<CategoryResponseDTO>> createUserCategory(@RequestAttribute("userId") String userId, @Validated(Create.class) @RequestBody CategoryRequestDTO categoryRequestDTO)
+            throws BadRequestException {
+        return ResponseEntity.ok(new BaseResponse<>("Category created successfully", true, categoryService.createUserCategory(userId, categoryRequestDTO)));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<BaseResponse<CategoryResponseDTO>> updateUserCategory(@RequestAttribute("userId") String userId, @PathVariable Long id, @Validated(Update.class) @RequestBody CategoryRequestDTO categoryRequestDTO)
+            throws BadRequestException {
+        return ResponseEntity.ok(new BaseResponse<>("Category updated successfully", true, categoryService.updateUserCategory(userId, id, categoryRequestDTO)));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<BaseResponse<Void>> deleteUserCategory(@RequestAttribute("userId") String userId, @PathVariable Long id) {
+        categoryService.deleteUserCategory(userId, id);
+        return ResponseEntity.ok(new BaseResponse<>("Category deleted successfully", true));
     }
 }
