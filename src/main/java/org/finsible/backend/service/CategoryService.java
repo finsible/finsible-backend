@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class CategoryService {
@@ -120,13 +121,15 @@ public class CategoryService {
         return categoryMapper.toCategoryResponseDTO(category);
     }
 
-    // todo: refactor this method and clear the validations
     private void validateParentCategory(String userId, CategoryRequestDTO categoryRequestDTO, Category category) throws BadRequestException {
-        Boolean isSubCategory = categoryRequestDTO.getIsSubCategory();
-        if(isSubCategory == null){
-            // not removing parent category info if isSubCategory is not provided
+        // no explicit intent to change parent => keep existing parent as-is
+        if (categoryRequestDTO.getIsSubCategory() == null) {
             return;
         }
+
+        boolean isSubCategory = categoryRequestDTO.getIsSubCategory();
+
+        // explicit request to remove parent
         if (!isSubCategory) {
             category.setParentCategory(null);
             return;
@@ -137,12 +140,27 @@ public class CategoryService {
             throw new BadRequestException("Parent category id must be provided for sub-categories");
         }
 
+        // let's keep it simple and not allow deep nesting
+        // we show only one level of sub-categories in the UI
+        if (Objects.equals(parentId, category.getId())) {
+            throw new BadRequestException("Category cannot be its own parent");
+        }
+
         Category parentCategory = categoryRepository.findById(parentId)
                 .orElseThrow(() -> new EntityNotFoundException("Parent category does not exist with id: " + parentId));
 
-        // todo: Add a check to ensure default categories can only have default parents but user categories can have both default and user parents.
-        if (parentCategory.getCreatedBy() != null && !parentCategory.getCreatedBy().getId().equals(userId)) {
-            throw new BadRequestException("Parent category does not belong to the user");
+        // ownership rules:
+        // - default categories (userId == null) may only have default parents
+        // - user categories may have default parents or parents created by the same user
+        boolean isDefaultCategory = userId == null;
+        if (isDefaultCategory) {
+            if (parentCategory.getCreatedBy() != null) {
+                throw new BadRequestException("Default categories can only have default parents");
+            }
+        } else {
+            if (parentCategory.getCreatedBy() != null && !Objects.equals(userId, parentCategory.getCreatedBy().getId())) {
+                throw new BadRequestException("Parent category does not belong to the user");
+            }
         }
 
         category.setParentCategory(parentCategory);
