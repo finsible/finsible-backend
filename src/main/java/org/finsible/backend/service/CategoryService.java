@@ -149,6 +149,11 @@ public class CategoryService {
         Category parentCategory = categoryRepository.findById(parentId)
                 .orElseThrow(() -> new EntityNotFoundException("Parent category does not exist with id: " + parentId));
 
+        // Prevent deep nesting: do not allow sub-category of a sub-category
+        if (parentCategory.getParentCategory() != null) {
+            throw new BadRequestException("Cannot create sub-category of a sub-category");
+        }
+
         // ownership rules:
         // - default categories (userId == null) may only have default parents
         // - user categories may have default parents or parents created by the same user
@@ -164,6 +169,7 @@ public class CategoryService {
         }
 
         category.setParentCategory(parentCategory);
+        category.setSubCategory(true);
     }
 
     @Transactional
@@ -186,6 +192,7 @@ public class CategoryService {
                 .orElseThrow(() -> new EntityNotFoundException("Category does not exist with id: " + categoryId));
 
         // todo: check if category is used in any transaction or other checks, if yes, prevent deletion or show warning
+        // todo: handle sub-categories/ parent existence if any
         categoryRepository.deleteById(categoryId);
         logger.info("Deleted category with id: {}", categoryId);
     }
