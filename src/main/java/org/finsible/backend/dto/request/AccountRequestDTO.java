@@ -23,6 +23,6 @@ public class AccountRequestDTO {
     @Size(groups = {Create.class, Update.class}, min = 3, max = 3, message = "Currency code must be a 3-letter ISO code")
     private String currencyCode;
 
-    private boolean isActive;
-    private boolean isSystemDefault;
+    private Boolean isActive;
+    private Boolean isSystemDefault;
 }

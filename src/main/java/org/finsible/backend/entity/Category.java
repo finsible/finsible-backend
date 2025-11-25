@@ -54,12 +54,4 @@ public class Category {
 
     @LastModifiedBy
     private String updatedBy;
-
-    public boolean isReadOnly() {
-        return createdBy == null; // Default categories are read-only
-    }
-
-    public boolean canUserModify(User user) {
-        return createdBy != null && createdBy.equals(user);
-    }
 }
