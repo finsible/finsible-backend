@@ -38,7 +38,7 @@ public class Category {
 
     @Column(nullable = false)
     @Builder.Default
-    private boolean isSubCategory = false;
+    private Boolean isSubCategory = false;
 
     @ManyToOne
     @JoinColumn(name = "parent_category_id")

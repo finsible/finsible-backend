@@ -142,9 +142,7 @@ public class AccountService {
 
     @Transactional
     public void deleteAccount(String userId, Long accountId) throws BadRequestException {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found with id: "+userId));
-        Account account = accountRepository.findByIdAndUser(accountId, user);
+        Account account = accountRepository.findByIdAndUser_Id(accountId, userId);
         if(account == null) throw new EntityNotFoundException("Account not found");
         // todo : Additional checks can be added here (e.g., prevent deletion if account has linked transactions)
         // prevent default account deletion
@@ -157,8 +155,7 @@ public class AccountService {
 
     @Transactional
     public AccountResponseDTO updateAccount(String userId, Long accountId, AccountRequestDTO accountRequestDTO) {
-        User user = userRepository.findById(userId).orElseThrow(()-> new UserNotFoundException("User not found with id: "+userId));
-        Account account = accountRepository.findByIdAndUser(accountId, user);
+        Account account = accountRepository.findByIdAndUser_Id(accountId, userId);
         if(account == null) throw new EntityNotFoundException("Account not found");
         accountMapper.updateAccountFromDto(accountRequestDTO, account);
         if (accountRequestDTO.getCurrencyCode() != null) {
@@ -217,7 +214,7 @@ public class AccountService {
         // handle auto-pay account linking
         if(creditCardAccountRequestDTO.getAutoPayEnabled()){
             Long autoPayFromAccountId = creditCardAccountRequestDTO.getAutoPayFromAccountId();
-            Account autoPayFromAccount = findAndValidateBankAccountForUser(autoPayFromAccountId, user, "Auto pay");
+            Account autoPayFromAccount = findAndValidateBankAccountForUser(autoPayFromAccountId, userId, "Auto pay");
             creditCardDetail.setAutoPayFromAccount(autoPayFromAccount);
         }
 
@@ -233,19 +230,14 @@ public class AccountService {
 
     @Transactional
     public AccountResponseDTO updateCreditCardAccount(String userId, Long accountId, CreditCardAccountRequestDTO creditCardAccountRequestDTO) throws BadRequestException {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
-        Account account = accountRepository.findByIdAndUser(accountId, user);
+        Account account = accountRepository.findByIdAndUser_Id(accountId, userId);
         if (account == null) throw new EntityNotFoundException("Credit card account not found");
         CreditCardDetail creditCardDetail = creditCardDetailRepository.findById(accountId)
                 .orElseThrow(() -> new EntityNotFoundException("Credit card details not found for account id: " + accountId));
 
-        AccountResponseDTO existingAccountResponseDTO = accountMapper.toAccountResponseDTO(account);
-        accountMapper.creditCardAccountResponse(creditCardDetail, existingAccountResponseDTO);
-
         if(creditCardAccountRequestDTO.getAutoPayEnabled() != null){
             if(creditCardAccountRequestDTO.getAutoPayEnabled()){
-                Account autoPayFromAccount = findAndValidateBankAccountForUser(creditCardAccountRequestDTO.getAutoPayFromAccountId(), user, "Auto pay");
+                Account autoPayFromAccount = findAndValidateBankAccountForUser(creditCardAccountRequestDTO.getAutoPayFromAccountId(), userId, "Auto pay");
                 creditCardDetail.setAutoPayFromAccount(autoPayFromAccount);
             } else {
                 // if disabling auto-pay, clear the linked account
@@ -259,11 +251,6 @@ public class AccountService {
         AccountResponseDTO responseDTO = accountMapper.toAccountResponseDTO(account);
         // populate credit card specific fields
         accountMapper.creditCardAccountResponse(creditCardDetail, responseDTO);
-
-        // to avoid unnecessary database writes
-        if(existingAccountResponseDTO.equals(responseDTO)){
-            return existingAccountResponseDTO;
-        }
 
         accountRepository.save(account);
         logger.info("Updated credit card account with id {}", account.getId());
@@ -291,7 +278,7 @@ public class AccountService {
             debitCardAccountRequestDTO.setIsActive(true);
         }
         Account debitCardAccount = accountMapper.toAccount(debitCardAccountRequestDTO);
-        Account linkedBankAccount = findAndValidateBankAccountForUser(debitCardAccountRequestDTO.getLinkedBankAccountId(), user, "Linked bank");
+        Account linkedBankAccount = findAndValidateBankAccountForUser(debitCardAccountRequestDTO.getLinkedBankAccountId(), userId, "Linked bank");
         // we should always use the debit card account balance from the linked bank account when needed as storing balance here may lead to inconsistencies
 
         debitCardAccount.setUser(user);
@@ -319,19 +306,14 @@ public class AccountService {
     @Transactional
     public AccountResponseDTO updateDebitCardAccount(String userId, Long accountId, DebitCardAccountRequestDTO debitCardAccountRequestDTO)
             throws BadRequestException {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
-        Account account = accountRepository.findByIdAndUser(accountId, user);
+        Account account = accountRepository.findByIdAndUser_Id(accountId, userId);
         if (account == null) throw new EntityNotFoundException("Debit card account not found");
 
         DebitCardDetail debitCardDetail = debitCardDetailRepository.findById(accountId)
                 .orElseThrow(() -> new EntityNotFoundException("Debit card details not found for account id: " + accountId));
 
-        AccountResponseDTO existingAccountResponseDTO = accountMapper.toAccountResponseDTO(account);
-        accountMapper.debitCardAccountResponse(debitCardDetail, existingAccountResponseDTO);
-
         if (debitCardAccountRequestDTO.getLinkedBankAccountId() != null) {
-            Account linkedBankAccount = findAndValidateBankAccountForUser(debitCardAccountRequestDTO.getLinkedBankAccountId(), user, "Linked bank");
+            Account linkedBankAccount = findAndValidateBankAccountForUser(debitCardAccountRequestDTO.getLinkedBankAccountId(), userId, "Linked bank");
             debitCardDetail.setLinkedBankAccount(linkedBankAccount);
         }
 
@@ -341,11 +323,6 @@ public class AccountService {
         AccountResponseDTO responseDTO = accountMapper.toAccountResponseDTO(account);
         // populate debit card specific fields
         accountMapper.debitCardAccountResponse(debitCardDetail, responseDTO);
-
-        // to avoid unnecessary database writes
-        if(existingAccountResponseDTO.equals(responseDTO)){
-            return existingAccountResponseDTO;
-        }
 
         accountRepository.save(account);
         logger.info("Updated debit card account with id {}", account.getId());
@@ -357,12 +334,12 @@ public class AccountService {
         return responseDTO;
     }
 
-    private Account findAndValidateBankAccountForUser(Long accountId, User user, String field) throws BadRequestException {
+    private Account findAndValidateBankAccountForUser(Long accountId, String userId, String field) throws BadRequestException {
         if(accountId == null){
             logger.error("{} account id is null", field);
             throw new BadRequestException(field + " account must be provided");
         }
-        Account account = accountRepository.findByIdAndUser(accountId, user);
+        Account account = accountRepository.findByIdAndUser_Id(accountId, userId);
         if (account == null) {
             logger.error("Account with id {} not found", accountId);
             throw new EntityNotFoundException(field + " account not found");
