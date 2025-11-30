@@ -39,7 +39,7 @@ public class CategoryService {
         // if user has not edited categories, then we return default categories
         List<Category> categories = getDefaultCategories();
 
-        if(!user.getIsCategoriesEdited()) {
+        if(!user.isCategoriesEdited()) {
             logger.info("Getting default categories for user with id: {}", userId);
             return categories.stream().map(categoryMapper::toCategoryResponseDTO).toList();
         }
@@ -56,7 +56,7 @@ public class CategoryService {
 
         List<Category> categoriesByType = categoryRepository.findCategoriesByTypeAndCreatedBy(type, null);
 
-        if(!user.getIsCategoriesEdited()) {
+        if(!user.isCategoriesEdited()) {
             logger.info("Getting default categories of type {} for user with id: {}", type, userId);
             return categoriesByType.stream().map(categoryMapper::toCategoryResponseDTO).toList();
         }
@@ -108,8 +108,8 @@ public class CategoryService {
 
         Category category = categoryMapper.toCategory(categoryRequestDTO);
 
-        if(!user.getIsCategoriesEdited()){
-            user.setIsCategoriesEdited(true);
+        if(!user.isCategoriesEdited()){
+            user.setCategoriesEdited(true);
             userRepository.save(user);
         }
 

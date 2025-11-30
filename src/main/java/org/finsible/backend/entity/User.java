@@ -39,7 +39,7 @@ public class User{
 
     @Column(nullable = false, name = "categories_edited")
     @Builder.Default
-    private Boolean isCategoriesEdited = false;
+    private boolean isCategoriesEdited = false;
 
     @ManyToOne
     @JoinColumn(name = "default_language", nullable = false, referencedColumnName = "code")
