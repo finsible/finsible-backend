@@ -1,5 +1,6 @@
 package org.finsible.backend.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,6 +14,8 @@ public class AccountResponseDTO {
     private Long id;
     private String name;
     private String description;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private BigDecimal balance;
     private Long accountGroupId;
     private String icon;
@@ -22,9 +25,13 @@ public class AccountResponseDTO {
 
     // credit card details - include only when non-null
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private BigDecimal creditLimit;
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private BigDecimal availableCredit;
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Integer billingDate;
     @JsonInclude(JsonInclude.Include.NON_NULL)

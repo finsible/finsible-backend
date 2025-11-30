@@ -39,7 +39,7 @@ public class CategoryService {
         // if user has not edited categories, then we return default categories
         List<Category> categories = getDefaultCategories();
 
-        if(!user.isCategoriesEdited()) {
+        if(!user.getIsCategoriesEdited()) {
             logger.info("Getting default categories for user with id: {}", userId);
             return categories.stream().map(categoryMapper::toCategoryResponseDTO).toList();
         }
@@ -56,7 +56,7 @@ public class CategoryService {
 
         List<Category> categoriesByType = categoryRepository.findCategoriesByTypeAndCreatedBy(type, null);
 
-        if(!user.isCategoriesEdited()) {
+        if(!user.getIsCategoriesEdited()) {
             logger.info("Getting default categories of type {} for user with id: {}", type, userId);
             return categoriesByType.stream().map(categoryMapper::toCategoryResponseDTO).toList();
         }
@@ -108,8 +108,8 @@ public class CategoryService {
 
         Category category = categoryMapper.toCategory(categoryRequestDTO);
 
-        if(!user.isCategoriesEdited()){
-            user.setCategoriesEdited(true);
+        if(!user.getIsCategoriesEdited()){
+            user.setIsCategoriesEdited(true);
             userRepository.save(user);
         }
 
@@ -149,6 +149,11 @@ public class CategoryService {
         Category parentCategory = categoryRepository.findById(parentId)
                 .orElseThrow(() -> new EntityNotFoundException("Parent category does not exist with id: " + parentId));
 
+        // parent category should be of same type as the category
+        if(!Objects.equals(parentCategory.getType(), category.getType())) {
+            throw new BadRequestException("Parent category type does not match with the category type");
+        }
+
         // Prevent deep nesting: do not allow sub-category of a sub-category
         if (parentCategory.getParentCategory() != null) {
             throw new BadRequestException("Cannot create sub-category of a sub-category");
@@ -169,7 +174,7 @@ public class CategoryService {
         }
 
         category.setParentCategory(parentCategory);
-        category.setSubCategory(true);
+        category.setIsSubCategory(true);
     }
 
     @Transactional
@@ -180,6 +185,7 @@ public class CategoryService {
         categoryMapper.updateCategoryFromDTO(categoryRequestDTO, existingCategory);
         validateParentCategory(userId, categoryRequestDTO, existingCategory);
 
+        // if we send changes which are same as current values then hibernate skips update sql
         categoryRepository.save(existingCategory);
         logger.info("Updated category with categoryId: {}", categoryId);
         return categoryMapper.toCategoryResponseDTO(existingCategory);

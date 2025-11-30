@@ -13,6 +13,6 @@ public class CategoryResponseDTO {
     private String name;
     private String icon;
     private Category.CategoryType type; // "INCOME" or "EXPENSE"
-    private boolean isSubCategory;
+    private Boolean isSubCategory;
     private Long parentCategoryId;
 }

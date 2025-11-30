@@ -7,8 +7,6 @@ import lombok.NoArgsConstructor;
 import org.finsible.backend.dto.request.groups.Create;
 import org.finsible.backend.dto.request.groups.Update;
 import org.finsible.backend.validator.AtLeastOneFieldNotNull;
-import org.springframework.format.annotation.NumberFormat;
-
 import java.math.BigDecimal;
 
 @Data
@@ -31,11 +29,12 @@ public class CreditCardAccountRequestDTO {
 
     @NotNull(groups = Create.class, message = "Credit limit is required for Credit Card Account")
     @Positive(groups = {Create.class, Update.class}, message = "Credit limit must be a positive value")
+    @Digits(integer = 15, fraction = 4, groups = {Create.class, Update.class}, message = "Credit limit must have at most 15 integral digits and 4 fractional digits.")
     private BigDecimal creditLimit;
 
     // if not provided, will be set to credit limit when created
     // it should be a number and should not be greater than credit limit , can be negative
-    @NumberFormat // todo review annotation
+    @Digits(integer = 15, fraction = 4, groups = {Create.class, Update.class}, message = "Available credit limit must have at most 15 integral digits and 4 fractional digits.")
     private BigDecimal availableCredit; // will be equal to the account balance when created
 
     @Min(value = 1, groups = {Create.class, Update.class}, message = "Billing date must be between 1 and 31")

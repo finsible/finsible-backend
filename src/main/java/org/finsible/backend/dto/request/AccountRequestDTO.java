@@ -1,11 +1,13 @@
 package org.finsible.backend.dto.request;
 
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import org.finsible.backend.dto.request.groups.Create;
 import org.finsible.backend.dto.request.groups.Update;
 import org.finsible.backend.validator.AtLeastOneFieldNotNull;
+import java.math.BigDecimal;
 
 @Data
 @AtLeastOneFieldNotNull(groups = Update.class)
@@ -19,6 +21,9 @@ public class AccountRequestDTO {
 
     @Size(groups = {Create.class, Update.class}, max = 255, message = "Icon must not exceed 255 characters")
     private String icon;
+
+    @Digits(integer = 15, fraction = 4, groups = {Create.class, Update.class}, message = "Balance must have at most 15 integral digits and 4 fractional digits.")
+    private BigDecimal balance;
 
     @Size(groups = {Create.class, Update.class}, min = 3, max = 3, message = "Currency code must be a 3-letter ISO code")
     private String currencyCode;

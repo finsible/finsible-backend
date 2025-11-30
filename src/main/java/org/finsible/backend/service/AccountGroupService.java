@@ -39,10 +39,7 @@ public class AccountGroupService {
 
     @Transactional
     public AccountGroupResponseDTO createAccountGroup(String userId, AccountGroupRequestDTO accountGroupRequestDTO) {
-        User currentUser = userRepository.findById(userId).orElse(null);
-        if(currentUser == null) {
-            throw new UserNotFoundException(AppConstants.USER_NOT_FOUND_EXCEPTION);
-        }
+        User currentUser = userRepository.findById(userId).orElseThrow(()-> new UserNotFoundException(AppConstants.USER_NOT_FOUND_EXCEPTION));
         AccountGroup accountGroup = accountGroupMapper.toAccountGroup(accountGroupRequestDTO);
         accountGroup.setCreatedBy(currentUser);
         accountGroupRepository.save(accountGroup);
@@ -52,11 +49,7 @@ public class AccountGroupService {
 
     @Transactional
     public AccountGroupResponseDTO updateAccountGroup(String userId, Long accountGroupId, AccountGroupRequestDTO accountGroupRequestDTO) throws BadRequestException {
-        User currentUser = userRepository.findById(userId).orElse(null);
-        if(currentUser == null) {
-            throw new UserNotFoundException(AppConstants.USER_NOT_FOUND_EXCEPTION);
-        }
-        AccountGroup existingAccountGroup = accountGroupRepository.findAccountGroupByIdAndCreatedBy(accountGroupId, currentUser);
+        AccountGroup existingAccountGroup = accountGroupRepository.findAccountGroupByIdAndCreatedBy_Id(accountGroupId, userId);
         if(existingAccountGroup == null) {
             logger.warn("Account group with id: {} not found for update by user with id: {}", accountGroupId, userId);
             throw new EntityNotFoundException("Account group not found");
@@ -73,11 +66,7 @@ public class AccountGroupService {
 
     @Transactional
     public void deleteAccountGroup(String userId, Long accountGroupId) throws BadRequestException {
-        User currentUser = userRepository.findById(userId).orElse(null);
-        if(currentUser == null) {
-            throw new UserNotFoundException(AppConstants.USER_NOT_FOUND_EXCEPTION);
-        }
-        AccountGroup accountGroup = accountGroupRepository.findAccountGroupByIdAndCreatedBy(accountGroupId, currentUser);
+        AccountGroup accountGroup = accountGroupRepository.findAccountGroupByIdAndCreatedBy_Id(accountGroupId, userId);
         if(accountGroup == null) {
             logger.warn("Account group with id: {} not found for deletion by user with id: {}", accountGroupId, userId);
             throw new EntityNotFoundException("Account group not found");
