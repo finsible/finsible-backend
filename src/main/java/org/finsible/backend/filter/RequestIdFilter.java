@@ -21,9 +21,12 @@ public class RequestIdFilter extends OncePerRequestFilter {
         String traceId = request.getHeader(TRACE_ID_HEADER);
         if (traceId == null || traceId.isBlank()) {
             traceId = UUID.randomUUID().toString();
-        }
-        else{
-            traceId = UUID.fromString(traceId).toString(); // validate UUID format
+        } else {
+            try {
+                traceId = UUID.fromString(traceId).toString(); // validate UUID format
+            } catch (IllegalArgumentException e) {
+                traceId = UUID.randomUUID().toString();
+            }
         }
         MDC.put(TRACE_ID_KEY, traceId);
         response.setHeader(TRACE_ID_HEADER, traceId);
