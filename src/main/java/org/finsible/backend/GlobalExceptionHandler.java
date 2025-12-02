@@ -14,9 +14,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import javax.naming.AuthenticationException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.List;
@@ -54,7 +53,7 @@ public class GlobalExceptionHandler{
         for (ObjectError error : allErrors) {
             logger.error("Validation error (refId={}): {}", traceId, error.getDefaultMessage());
         }
-        String errorMessage = ex.getBindingResult().getAllErrors().getFirst().getDefaultMessage();
+        String errorMessage = allErrors.isEmpty() ? "Validation error" : allErrors.getFirst().getDefaultMessage();
         ErrorDetails error = new ErrorDetails(AppConstants.BAD_REQUEST, errorMessage, formatTraceIdForError(traceId));
         return ResponseEntity.badRequest().body(new BaseResponse<>(AppConstants.BAD_REQUEST_MESSAGE, false, error));
     }
