@@ -1,6 +1,7 @@
 package org.finsible.backend.configuration;
 
-import org.finsible.backend.service.JwtAuthenticationFilter;
+import org.finsible.backend.filter.JwtAuthenticationFilter;
+import org.finsible.backend.filter.RequestIdFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
@@ -22,9 +23,11 @@ import java.util.List;
 public class SecurityConfiguration { //middleware
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RequestIdFilter requestIdFilter;
 
-    public SecurityConfiguration(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfiguration(JwtAuthenticationFilter jwtAuthenticationFilter, RequestIdFilter requestIdFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.requestIdFilter = requestIdFilter;
     }
 
     @Bean
@@ -38,7 +41,8 @@ public class SecurityConfiguration { //middleware
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // stateless meaning no session will be created/stored - each request is required to have jwt for authentication
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class).build();
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(requestIdFilter, JwtAuthenticationFilter.class).build();
     }
 
     @Bean

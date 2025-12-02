@@ -1,4 +1,4 @@
-package org.finsible.backend.service;
+package org.finsible.backend.filter;
 
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.finsible.backend.CustomExceptionHandler.UserNotFoundException;
 import org.finsible.backend.repository.UserRepository;
+import org.finsible.backend.service.JwtService;
 import org.finsible.backend.utility.CookieHandler;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;

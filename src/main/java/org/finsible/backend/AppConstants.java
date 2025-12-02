@@ -7,7 +7,8 @@ public class AppConstants {
     public static final String REDIRECT_URI = "http://localhost:5173";
     public static final String LOGIN_SUCCESS_MESSAGE = "You are successfully logged in.";
     public static final String LOGOUT_SUCCESS_MESSAGE = "You have been logged out successfully.";
-    public static final String ENTITY_NOT_FOUND = "You have been logged out successfully.";
+    public static final int FORBIDDEN_REQUEST = 403;
+    public static final String FORBIDDEN_REQUEST_MESSAGE = "You do not have permission to perform this action.";
     public static final String CREDIT_CARD_ACCOUNT_TYPE = "Credit Card";
     public static final String DEBIT_CARD_ACCOUNT_TYPE = "Debit Card";
     public static final String BANK_ACCOUNT_TYPE = "Bank Account";
