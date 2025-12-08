@@ -7,7 +7,9 @@ import org.mapstruct.*;
 
 @Mapper(componentModel = "spring")
 public interface AccountGroupMapper {
+    @Mapping(target = "isSystemDefault", source = "isSystemDefault", defaultValue = "false")
     AccountGroup toAccountGroup(AccountGroupRequestDTO accountGroupRequestDTO);
+
     AccountGroupResponseDTO toAccountGroupResponseDTO(AccountGroup accountGroup);
 
     @Mapping(target = "id", ignore = true)

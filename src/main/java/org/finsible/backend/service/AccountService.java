@@ -142,8 +142,8 @@ public class AccountService {
 
     @Transactional
     public void deleteAccount(String userId, Long accountId) throws BadRequestException {
-        Account account = accountRepository.findByIdAndUser_Id(accountId, userId);
-        if(account == null) throw new EntityNotFoundException("Account not found");
+        Account account = accountRepository.findByIdAndUser_Id(accountId, userId)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found with id: " + accountId));
         // todo : Additional checks can be added here (e.g., prevent deletion if account has linked transactions)
         // prevent default account deletion
         if(account.getIsSystemDefault()){
@@ -155,8 +155,8 @@ public class AccountService {
 
     @Transactional
     public AccountResponseDTO updateAccount(String userId, Long accountId, AccountRequestDTO accountRequestDTO) {
-        Account account = accountRepository.findByIdAndUser_Id(accountId, userId);
-        if(account == null) throw new EntityNotFoundException("Account not found");
+        Account account = accountRepository.findByIdAndUser_Id(accountId, userId)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found with id: " + accountId));
         accountMapper.updateAccountFromDto(accountRequestDTO, account);
         if (accountRequestDTO.getCurrencyCode() != null) {
             SupportedCurrency currency = currencyRepository.findByCode(accountRequestDTO.getCurrencyCode());
@@ -230,8 +230,8 @@ public class AccountService {
 
     @Transactional
     public AccountResponseDTO updateCreditCardAccount(String userId, Long accountId, CreditCardAccountRequestDTO creditCardAccountRequestDTO) throws BadRequestException {
-        Account account = accountRepository.findByIdAndUser_Id(accountId, userId);
-        if (account == null) throw new EntityNotFoundException("Credit card account not found");
+        Account account = accountRepository.findByIdAndUser_Id(accountId, userId)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found with id: " + accountId));
         CreditCardDetail creditCardDetail = creditCardDetailRepository.findById(accountId)
                 .orElseThrow(() -> new EntityNotFoundException("Credit card details not found for account id: " + accountId));
 
@@ -306,8 +306,8 @@ public class AccountService {
     @Transactional
     public AccountResponseDTO updateDebitCardAccount(String userId, Long accountId, DebitCardAccountRequestDTO debitCardAccountRequestDTO)
             throws BadRequestException {
-        Account account = accountRepository.findByIdAndUser_Id(accountId, userId);
-        if (account == null) throw new EntityNotFoundException("Debit card account not found");
+        Account account = accountRepository.findByIdAndUser_Id(accountId, userId)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found with id: " + accountId));
 
         DebitCardDetail debitCardDetail = debitCardDetailRepository.findById(accountId)
                 .orElseThrow(() -> new EntityNotFoundException("Debit card details not found for account id: " + accountId));
@@ -339,11 +339,9 @@ public class AccountService {
             logger.error("{} account id is null", field);
             throw new BadRequestException(field + " account must be provided");
         }
-        Account account = accountRepository.findByIdAndUser_Id(accountId, userId);
-        if (account == null) {
-            logger.error("Account with id {} not found", accountId);
-            throw new EntityNotFoundException(field + " account not found");
-        }
+        Account account = accountRepository.findByIdAndUser_Id(accountId, userId)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found with id: " + accountId));
+
         if (!account.getAccountGroup().getName().equals(AppConstants.BANK_ACCOUNT_TYPE)) {
             logger.error("{} account must belong to bank account group", field);
             throw new BadRequestException(field + " account must belong to bank account group");

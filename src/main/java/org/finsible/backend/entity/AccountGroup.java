@@ -27,6 +27,8 @@ public class AccountGroup {
 
     private String icon;
 
+    private String color;
+
     @Column(nullable = false)
     @Builder.Default
     private Boolean isSystemDefault = false;

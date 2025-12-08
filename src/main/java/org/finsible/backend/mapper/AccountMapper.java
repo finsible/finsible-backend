@@ -11,6 +11,8 @@ import org.mapstruct.*;
 
 @Mapper(componentModel = "spring")
 public interface AccountMapper {
+    @Mapping(target = "isActive", source = "isActive", defaultValue = "true")
+    @Mapping(target = "isSystemDefault", source = "isSystemDefault", defaultValue = "false")
     Account toAccount(AccountRequestDTO accountRequestDTO);
 
     Account toAccount(DebitCardAccountRequestDTO debitCardAccountRequestDTO);
