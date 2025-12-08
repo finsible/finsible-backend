@@ -17,15 +17,12 @@ import java.time.Instant;
 @Table(name = "categories")
 @EntityListeners(AuditingEntityListener.class)
 public class Category {
-    public enum CategoryType {
-        INCOME, EXPENSE
-    }
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    private CategoryType type;
+    private Type type;
 
     @Column(nullable = false)
     private String name;

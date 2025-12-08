@@ -3,7 +3,7 @@ package org.finsible.backend.dto.response;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.finsible.backend.entity.Category;
+import org.finsible.backend.entity.Type;
 
 @Data
 @AllArgsConstructor
@@ -12,7 +12,7 @@ public class CategoryResponseDTO {
     private Long id;
     private String name;
     private String icon;
-    private Category.CategoryType type; // "INCOME" or "EXPENSE"
+    private Type type;
     private Boolean isSubCategory;
     private Long parentCategoryId;
 }
