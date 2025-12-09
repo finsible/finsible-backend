@@ -41,6 +41,6 @@ public class TransactionRequestDTO {
 
     private Long paidByUserId; // User who paid the amount
 
-    @Size(max = 3, min=3, message = "Currency code can have maximum 3 characters", groups = {Create.class, Update.class})
+    @Size(max = 3, min = 3, message = "Currency code must be exactly 3 characters", groups = {Create.class, Update.class})
     private String currency;
 }

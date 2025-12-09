@@ -111,6 +111,9 @@ public class TransactionService {
     private Transaction createTransferTransaction(String userId, TransactionRequestDTO requestDTO) throws BadRequestException {
         Account toAccount = getAccount(userId, requestDTO.getToAccountId(), "To account");
         Account fromAccount = getAccount(userId, requestDTO.getFromAccountId(), "From account");
+        if (toAccount.getId().equals(fromAccount.getId())) {
+            throw new BadRequestException("To account and From account cannot be the same for transfer transaction");
+        }
         Category category = getCategory(userId, requestDTO.getCategoryId(), Type.TRANSFER);
 
         Transaction transaction = buildTransaction(requestDTO, toAccount, fromAccount, category);
@@ -128,21 +131,21 @@ public class TransactionService {
                 .orElseThrow(() -> new EntityNotFoundException("Transaction not found with id: " + transactionId));
 
         // 1. Validate type cannot change
-        if(requestDTO.getType() != null && !requestDTO.getType().equals(transaction.getType())) {
+        if (requestDTO.getType() != null && !requestDTO.getType().equals(transaction.getType())) {
             throw new BadRequestException("Transaction type cannot be updated");
         }
 
         Type type = transaction.getType();
 
         // 2. Handle category update
-        if(requestDTO.getCategoryId() != null &&
+        if (requestDTO.getCategoryId() != null &&
            !requestDTO.getCategoryId().equals(transaction.getCategory().getId())) {
             Category category = getCategory(userId, requestDTO.getCategoryId(), type);
             transaction.setCategory(category);
         }
 
         // 3. Handle amount change BEFORE account changes
-        if(requestDTO.getTotalAmount() != null &&
+        if (requestDTO.getTotalAmount() != null &&
            !requestDTO.getTotalAmount().equals(transaction.getTotalAmount())) {
 
             BigDecimal amountDifference = requestDTO.getTotalAmount()
@@ -150,27 +153,27 @@ public class TransactionService {
 
             handleAmountChange(transaction, amountDifference);
         }
+        BigDecimal latestAmount = requestDTO.getTotalAmount() != null ? requestDTO.getTotalAmount() : transaction.getTotalAmount();
 
         // 4. Handle toAccount change (INCOME/TRANSFER)
-        if(requestDTO.getToAccountId() != null &&
+        if (requestDTO.getToAccountId() != null &&
            (type == Type.INCOME || type == Type.TRANSFER) && !requestDTO.getToAccountId().equals(transaction.getToAccount().getId())) {
 
-            updateAccountBalance(transaction.getToAccount(), transaction.getTotalAmount(), false);
+            updateAccountBalance(transaction.getToAccount(), latestAmount, false);
             Account newToAccount = getAccount(userId, requestDTO.getToAccountId(), "To account");
             handleCurrency(newToAccount, transaction, requestDTO);
-            updateAccountBalance(newToAccount, requestDTO.getTotalAmount(), true);
+            updateAccountBalance(newToAccount, latestAmount, true);
             transaction.setToAccount(newToAccount);
         }
 
         // 5. Handle fromAccount change (EXPENSE/TRANSFER)
-        if(requestDTO.getFromAccountId() != null &&
+        if (requestDTO.getFromAccountId() != null &&
            (type == Type.EXPENSE || type == Type.TRANSFER) && !requestDTO.getFromAccountId().equals(transaction.getFromAccount().getId())) {
 
-            updateAccountBalance(transaction.getFromAccount(), transaction.getTotalAmount(), true);
-
+            updateAccountBalance(transaction.getFromAccount(), latestAmount, true);
             Account newFromAccount = getAccount(userId, requestDTO.getFromAccountId(), "From account");
             handleCurrency(newFromAccount, transaction, requestDTO);
-            updateAccountBalance(newFromAccount, requestDTO.getTotalAmount(), false);
+            updateAccountBalance(newFromAccount, latestAmount, false);
             transaction.setFromAccount(newFromAccount);
         }
 
@@ -188,11 +191,11 @@ public class TransactionService {
                 .orElseThrow(() -> new EntityNotFoundException("Transaction not found with id: " + transactionId));
 
         BigDecimal totalAmount = transaction.getTotalAmount();
-        if(transaction.getType() == Type.INCOME) {
+        if (transaction.getType() == Type.INCOME) {
             updateAccountBalance(transaction.getToAccount(), totalAmount, false);
-        } else if(transaction.getType() == Type.EXPENSE) {
+        } else if (transaction.getType() == Type.EXPENSE) {
             updateAccountBalance(transaction.getFromAccount(), totalAmount, true);
-        } else if(transaction.getType() == Type.TRANSFER) {
+        } else if (transaction.getType() == Type.TRANSFER) {
             updateAccountBalance(transaction.getFromAccount(), totalAmount, true);
             updateAccountBalance(transaction.getToAccount(), totalAmount, false);
         }
@@ -202,7 +205,7 @@ public class TransactionService {
     }
 
     private void handleAmountChange(Transaction transaction, BigDecimal amountDifference) {
-        switch(transaction.getType()) {
+        switch (transaction.getType()) {
             case INCOME -> updateAccountBalance(transaction.getToAccount(), amountDifference, true);
             case EXPENSE -> updateAccountBalance(transaction.getFromAccount(), amountDifference, false);
             case TRANSFER -> {
@@ -248,13 +251,12 @@ public class TransactionService {
     }
 
     private void handleCurrency(Account account, Transaction transaction, TransactionRequestDTO requestDTO) {
-        if (account.getCurrency() != null && requestDTO.getCurrency() == null) {
-            transaction.setCurrency(account.getCurrency());
-        }
         if (account.getCurrency() == null){
             throw new EntityNotFoundException("Account currency not set for account id: " + account.getId());
         }
-        if (requestDTO.getCurrency() != null) {
+        if (requestDTO.getCurrency() == null) {
+            transaction.setCurrency(account.getCurrency());
+        } else {
             SupportedCurrency currency = supportedCurrencyRepository.findByCode(requestDTO.getCurrency());
             if (currency == null) {
                 throw new EntityNotFoundException("Currency not supported: " + requestDTO.getCurrency());

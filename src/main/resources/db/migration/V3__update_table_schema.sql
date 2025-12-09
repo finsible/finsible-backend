@@ -1,5 +1,5 @@
 ALTER TABLE transactions
-    ADD COLUMN transaction_date BIGINT NOT NULL default 1735689600; -- Default to Jan 1, 2025
+    ADD COLUMN transaction_date BIGINT NOT NULL default 1735689600000; -- Default
 
 -- Rename existing 'account' column to 'to_account_id'
 ALTER TABLE transactions

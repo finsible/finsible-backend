@@ -20,10 +20,8 @@ public class TransactionResponseDTO {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Long toAccountId;
-//    private String toAccountName;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Long fromAccountId;
-//    private String fromAccountName;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Long spaceId;
     @JsonInclude(JsonInclude.Include.NON_NULL)

@@ -4,6 +4,7 @@ import org.apache.coyote.BadRequestException;
 import org.finsible.backend.BaseResponse;
 import org.finsible.backend.dto.request.TransactionRequestDTO;
 import org.finsible.backend.dto.request.groups.Create;
+import org.finsible.backend.dto.request.groups.Update;
 import org.finsible.backend.dto.response.TransactionResponseDTO;
 import org.finsible.backend.entity.Type;
 import org.finsible.backend.service.TransactionService;
@@ -55,7 +56,7 @@ public class TransactionController {
     @PutMapping("/{id}")
     public ResponseEntity<BaseResponse<TransactionResponseDTO>> updateTransaction(@RequestAttribute String userId,
                                                                                   @PathVariable Long id,
-                                                                                  @Validated @RequestBody TransactionRequestDTO transactionRequestDTO) throws BadRequestException {
+                                                                                  @Validated(Update.class) @RequestBody TransactionRequestDTO transactionRequestDTO) throws BadRequestException {
         TransactionResponseDTO updatedTransaction = transactionService.updateTransaction(userId, id, transactionRequestDTO);
         return ResponseEntity.ok(new BaseResponse<>("Transaction updated successfully", true, updatedTransaction));
     }
