@@ -50,15 +50,14 @@ public class TransactionService {
 
     @Transactional(readOnly = true)
     public List<TransactionResponseDTO> getTransactionsByAccount(String userId, Long accountId) {
-        List<Transaction> transactionsByAccount = transactionRepository.findAllByToAccount_IdAndCreatedBy(accountId, userId);
-        transactionsByAccount.addAll(transactionRepository.findAllByFromAccount_IdAndCreatedBy(accountId, userId));
+        List<Transaction> transactionsByAccount = transactionRepository.findAllByToAccount_IdOrFromAccount_IdAndCreatedBy(accountId, accountId, userId);
         return transactionsByAccount.stream().map(transactionMapper::toTransactionResponseDTO).toList();
     }
 
     @Transactional(readOnly = true)
     public List<TransactionResponseDTO> getTransactionsByAccountGroup(String userId, Long accountGroupId) {
-        List<Transaction> transactionsByAccountGroup = transactionRepository.findAllByToAccount_AccountGroup_IdAndCreatedBy(accountGroupId, userId);
-        transactionsByAccountGroup.addAll(transactionRepository.findAllByFromAccount_AccountGroup_IdAndCreatedBy(accountGroupId, userId));
+        List<Transaction> transactionsByAccountGroup = transactionRepository
+                .findAllByToAccount_AccountGroup_IdOrFromAccount_AccountGroup_IdAndCreatedBy(accountGroupId, accountGroupId, userId);
         return transactionsByAccountGroup.stream().map(transactionMapper::toTransactionResponseDTO).toList();
     }
 
@@ -155,6 +154,14 @@ public class TransactionService {
         }
         BigDecimal latestAmount = requestDTO.getTotalAmount() != null ? requestDTO.getTotalAmount() : transaction.getTotalAmount();
 
+        // Ensure for TRANSFER type, fromAccount and toAccount are not the same
+        if (type == Type.TRANSFER &&
+                ( requestDTO.getFromAccountId() != null && requestDTO.getToAccountId() == null && requestDTO.getFromAccountId().equals(transaction.getToAccount().getId())) ||
+                ( requestDTO.getToAccountId() != null && requestDTO.getFromAccountId() == null && requestDTO.getToAccountId().equals(transaction.getFromAccount().getId())) ||
+                ( requestDTO.getFromAccountId() != null && requestDTO.getToAccountId() != null && requestDTO.getFromAccountId().equals(requestDTO.getToAccountId()))) {
+            throw new BadRequestException("For TRANSFER transactions, fromAccount and toAccount must be different");
+        }
+
         // 4. Handle toAccount change (INCOME/TRANSFER)
         if (requestDTO.getToAccountId() != null &&
            (type == Type.INCOME || type == Type.TRANSFER) && !requestDTO.getToAccountId().equals(transaction.getToAccount().getId())) {
@@ -246,6 +253,10 @@ public class TransactionService {
             : account.getBalance().subtract(amount);
 
         account.setBalance(newBalance);
+        if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
+            logger.warn("Account {} balance will go negative ({} -> {}). Consider reviewing overdraft policy.",
+                    account.getId(), account.getBalance(), newBalance);
+        }
         accountRepository.save(account);
         logger.info("Updated balance in account: {}, New balance: {}", account.getId(), newBalance);
     }

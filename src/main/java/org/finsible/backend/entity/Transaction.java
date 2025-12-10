@@ -36,7 +36,7 @@ public class Transaction {
     private BigDecimal userShare; // Amount paid by the user
 
     @Builder.Default
-    private boolean isSplit = false;
+    private Boolean isSplit = false;
 
     @ManyToOne
     private User paidBy; // User who paid the amount

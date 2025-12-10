@@ -20,4 +20,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findAllByToAccount_AccountGroup_IdAndCreatedBy(Long toAccountAccountGroupId, String createdBy);
 
     List<Transaction> findAllByFromAccount_AccountGroup_IdAndCreatedBy(Long accountGroupId, String userId);
+
+    List<Transaction> findAllByToAccount_IdOrFromAccount_IdAndCreatedBy(Long toAccount_id, Long fromAccount_id, String createdBy);
+
+    List<Transaction> findAllByToAccount_AccountGroup_IdOrFromAccount_AccountGroup_IdAndCreatedBy(Long toAccount_accountGroup_id, Long fromAccount_accountGroup_id, String createdBy);
 }

@@ -22,6 +22,12 @@ public class TransactionController {
         this.transactionService = transactionService;
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<BaseResponse<TransactionResponseDTO>> getTransactionById(@RequestAttribute String userId, @PathVariable Long id) {
+        TransactionResponseDTO transaction = transactionService.getTransactionById(userId, id);
+        return ResponseEntity.ok(new BaseResponse<>("Transaction fetched successfully", true, transaction));
+    }
+
     @GetMapping("/all/{type}")
     public ResponseEntity<BaseResponse<List<TransactionResponseDTO>>> getTransactionsByType(@RequestAttribute String userId, @PathVariable Type type) {
         List<TransactionResponseDTO> transactions = transactionService.getTransactionsByType(userId, type);

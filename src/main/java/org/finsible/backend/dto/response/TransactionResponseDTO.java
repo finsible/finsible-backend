@@ -27,7 +27,7 @@ public class TransactionResponseDTO {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String userShare;
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private boolean isSplit;
+    private Boolean isSplit;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Long paidByUserId;
     @JsonInclude(JsonInclude.Include.NON_NULL)
