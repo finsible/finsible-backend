@@ -12,6 +12,7 @@ public class AccountGroupResponseDTO {
     private String name;
     private String description;
     private String icon;
+    private String color;
 //    private Integer displayOrder;  enable later if needed
     private Boolean isSystemDefault;
 }

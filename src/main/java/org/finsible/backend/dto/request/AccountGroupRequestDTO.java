@@ -1,7 +1,6 @@
 package org.finsible.backend.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import org.finsible.backend.dto.request.groups.Create;
@@ -21,5 +20,10 @@ public class AccountGroupRequestDTO {
     @Size(max = 255, groups = {Create.class, Update.class}, message = "Icon must not exceed 255 characters")
     private String icon;
 
+    @Size(max = 25, groups = {Create.class, Update.class}, message = "Color must not exceed 25 characters")
+    private String color;
+
     private Integer displayOrder;
+
+    private Boolean isSystemDefault;
 }

@@ -6,7 +6,7 @@ import org.finsible.backend.dto.request.CategoryRequestDTO;
 import org.finsible.backend.dto.request.groups.Create;
 import org.finsible.backend.dto.request.groups.Update;
 import org.finsible.backend.dto.response.CategoryResponseDTO;
-import org.finsible.backend.entity.Category;
+import org.finsible.backend.entity.Type;
 import org.finsible.backend.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +32,7 @@ public class CategoryController {
     }
 
     @GetMapping("/type/{type}")
-    public ResponseEntity<BaseResponse<List<CategoryResponseDTO>>> getCategoriesByType(@RequestAttribute("userId") String userId, @PathVariable Category.CategoryType type) {
+    public ResponseEntity<BaseResponse<List<CategoryResponseDTO>>> getCategoriesByType(@RequestAttribute("userId") String userId, @PathVariable Type type) {
         return ResponseEntity.ok(new BaseResponse<>("Categories of type " + type + " fetched successfully", true, categoryService.getCategoriesByType(userId, type)));
     }
 

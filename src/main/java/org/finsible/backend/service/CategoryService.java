@@ -5,6 +5,7 @@ import org.finsible.backend.CustomExceptionHandler.EntityNotFoundException;
 import org.finsible.backend.CustomExceptionHandler.UserNotFoundException;
 import org.finsible.backend.dto.request.CategoryRequestDTO;
 import org.finsible.backend.dto.response.CategoryResponseDTO;
+import org.finsible.backend.entity.Type;
 import org.finsible.backend.mapper.CategoryMapper;
 import org.finsible.backend.repository.CategoryRepository;
 import org.finsible.backend.repository.UserRepository;
@@ -50,7 +51,7 @@ public class CategoryService {
     }
 
     @Transactional(readOnly = true)
-    public List<CategoryResponseDTO> getCategoriesByType(String userId, Category.CategoryType type) {
+    public List<CategoryResponseDTO> getCategoriesByType(String userId, Type type) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
 

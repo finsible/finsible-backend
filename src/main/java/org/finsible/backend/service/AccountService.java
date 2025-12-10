@@ -55,13 +55,13 @@ public class AccountService {
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: "+userId));
 
         AccountGroup accountGroup = accountGroupRepository.findAccountGroupById(accountGroupId);
-        if(accountGroup == null) throw new EntityNotFoundException("Account group not found");
+        if (accountGroup == null) throw new EntityNotFoundException("Account group not found");
 
         SupportedCurrency currency = currencyRepository.findByCode(accountRequestDTO.getCurrencyCode());
-        if(currency == null) currency = user.getDefaultCurrency();
+        if (currency == null) currency = user.getDefaultCurrency();
 
         Account account = accountMapper.toAccount(accountRequestDTO);
-        if(account.getBalance() == null) account.setBalance(BigDecimal.ZERO);
+        if (account.getBalance() == null) account.setBalance(BigDecimal.ZERO);
         account.setUser(user);
         account.setAccountGroup(accountGroup);
         account.setCurrency(currency);
@@ -88,7 +88,7 @@ public class AccountService {
         Map<Long, DebitCardDetail> debitCardDetailMap;
         Map<Long, LoanDetail> loanDetailMap;
 
-        if(accountIdsByType.containsKey(AppConstants.CREDIT_CARD_ACCOUNT_TYPE)){
+        if (accountIdsByType.containsKey(AppConstants.CREDIT_CARD_ACCOUNT_TYPE)){
             List<Long> creditCardAccountIds = accountIdsByType.get(AppConstants.CREDIT_CARD_ACCOUNT_TYPE);
             List<CreditCardDetail> creditCardDetails = creditCardDetailRepository.findAllById(creditCardAccountIds);
             creditCardDetailMap = creditCardDetails.stream()
@@ -96,7 +96,7 @@ public class AccountService {
         } else {
             creditCardDetailMap = new HashMap<>();
         }
-        if(accountIdsByType.containsKey(AppConstants.DEBIT_CARD_ACCOUNT_TYPE)){
+        if (accountIdsByType.containsKey(AppConstants.DEBIT_CARD_ACCOUNT_TYPE)){
             List<Long> debitCardAccountIds = accountIdsByType.get(AppConstants.DEBIT_CARD_ACCOUNT_TYPE);
             List<DebitCardDetail> debitCardDetails = debitCardDetailRepository.findAllById(debitCardAccountIds);
             debitCardDetailMap = debitCardDetails.stream()
@@ -104,7 +104,7 @@ public class AccountService {
         } else {
             debitCardDetailMap = new HashMap<>();
         }
-        if(accountIdsByType.containsKey(AppConstants.LOAN_ACCOUNT_TYPE)){
+        if (accountIdsByType.containsKey(AppConstants.LOAN_ACCOUNT_TYPE)){
             List<Long> loanAccountIds = accountIdsByType.get(AppConstants.LOAN_ACCOUNT_TYPE);
             // Assuming loanDetailRepository is defined and injected
             List<LoanDetail> loanDetails = loanDetailRepository.findAllById(loanAccountIds);
@@ -142,11 +142,11 @@ public class AccountService {
 
     @Transactional
     public void deleteAccount(String userId, Long accountId) throws BadRequestException {
-        Account account = accountRepository.findByIdAndUser_Id(accountId, userId);
-        if(account == null) throw new EntityNotFoundException("Account not found");
+        Account account = accountRepository.findByIdAndUser_Id(accountId, userId)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found with id: " + accountId));
         // todo : Additional checks can be added here (e.g., prevent deletion if account has linked transactions)
         // prevent default account deletion
-        if(account.getIsSystemDefault()){
+        if (account.getIsSystemDefault()){
             throw new BadRequestException("Cannot delete system default account");
         }
         accountRepository.deleteById(accountId);
@@ -155,8 +155,8 @@ public class AccountService {
 
     @Transactional
     public AccountResponseDTO updateAccount(String userId, Long accountId, AccountRequestDTO accountRequestDTO) {
-        Account account = accountRepository.findByIdAndUser_Id(accountId, userId);
-        if(account == null) throw new EntityNotFoundException("Account not found");
+        Account account = accountRepository.findByIdAndUser_Id(accountId, userId)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found with id: " + accountId));
         accountMapper.updateAccountFromDto(accountRequestDTO, account);
         if (accountRequestDTO.getCurrencyCode() != null) {
             SupportedCurrency currency = currencyRepository.findByCode(accountRequestDTO.getCurrencyCode());
@@ -174,20 +174,20 @@ public class AccountService {
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
 
         AccountGroup accountGroup = accountGroupRepository.findAccountGroupByName(AppConstants.CREDIT_CARD_ACCOUNT_TYPE);
-        if(accountGroup == null) throw new EntityNotFoundException("Credit card account group not found"); // normally should not happen
+        if (accountGroup == null) throw new EntityNotFoundException("Credit card account group not found"); // normally should not happen
 
         SupportedCurrency currency = currencyRepository.findByCode(creditCardAccountRequestDTO.getCurrencyCode());
         if (currency == null) currency = user.getDefaultCurrency();
 
-        if(creditCardAccountRequestDTO.getAvailableCredit() == null){
+        if (creditCardAccountRequestDTO.getAvailableCredit() == null){
             creditCardAccountRequestDTO.setAvailableCredit(creditCardAccountRequestDTO.getCreditLimit());
             logger.info("Available credit not provided, setting it to credit limit: {}", creditCardAccountRequestDTO.getCreditLimit());
         }
 
-        if(creditCardAccountRequestDTO.getIsActive() == null){
+        if (creditCardAccountRequestDTO.getIsActive() == null){
             creditCardAccountRequestDTO.setIsActive(true);  // default to active
         }
-        if(creditCardAccountRequestDTO.getAutoPayEnabled() == null){
+        if (creditCardAccountRequestDTO.getAutoPayEnabled() == null){
             creditCardAccountRequestDTO.setAutoPayEnabled(false); // default auto pay disabled
         }
 
@@ -204,15 +204,15 @@ public class AccountService {
         CreditCardDetail creditCardDetail = accountMapper.toCreditCardDetail(creditCardAccountRequestDTO);
         creditCardDetail.setAccount(account);
 
-        if(creditCardDetail.getBillingDate() == null){
+        if (creditCardDetail.getBillingDate() == null){
             creditCardDetail.setBillingDate(1); // default to 1st of month
         }
-        if(creditCardDetail.getDueDate() == null){
+        if (creditCardDetail.getDueDate() == null){
             creditCardDetail.setDueDate(20); // default to 20th of month
         }
 
         // handle auto-pay account linking
-        if(creditCardAccountRequestDTO.getAutoPayEnabled()){
+        if (creditCardAccountRequestDTO.getAutoPayEnabled()){
             Long autoPayFromAccountId = creditCardAccountRequestDTO.getAutoPayFromAccountId();
             Account autoPayFromAccount = findAndValidateBankAccountForUser(autoPayFromAccountId, userId, "Auto pay");
             creditCardDetail.setAutoPayFromAccount(autoPayFromAccount);
@@ -230,13 +230,13 @@ public class AccountService {
 
     @Transactional
     public AccountResponseDTO updateCreditCardAccount(String userId, Long accountId, CreditCardAccountRequestDTO creditCardAccountRequestDTO) throws BadRequestException {
-        Account account = accountRepository.findByIdAndUser_Id(accountId, userId);
-        if (account == null) throw new EntityNotFoundException("Credit card account not found");
+        Account account = accountRepository.findByIdAndUser_Id(accountId, userId)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found with id: " + accountId));
         CreditCardDetail creditCardDetail = creditCardDetailRepository.findById(accountId)
                 .orElseThrow(() -> new EntityNotFoundException("Credit card details not found for account id: " + accountId));
 
-        if(creditCardAccountRequestDTO.getAutoPayEnabled() != null){
-            if(creditCardAccountRequestDTO.getAutoPayEnabled()){
+        if (creditCardAccountRequestDTO.getAutoPayEnabled() != null){
+            if (creditCardAccountRequestDTO.getAutoPayEnabled()){
                 Account autoPayFromAccount = findAndValidateBankAccountForUser(creditCardAccountRequestDTO.getAutoPayFromAccountId(), userId, "Auto pay");
                 creditCardDetail.setAutoPayFromAccount(autoPayFromAccount);
             } else {
@@ -268,7 +268,7 @@ public class AccountService {
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
 
         AccountGroup accountGroup = accountGroupRepository.findAccountGroupByName(AppConstants.DEBIT_CARD_ACCOUNT_TYPE);
-        if(accountGroup == null) throw new EntityNotFoundException("Debit card account group not found"); // normally should not happen
+        if (accountGroup == null) throw new EntityNotFoundException("Debit card account group not found"); // normally should not happen
 
         SupportedCurrency currency = currencyRepository.findByCode(debitCardAccountRequestDTO.getCurrencyCode());
         if (currency == null) currency = user.getDefaultCurrency();
@@ -306,8 +306,8 @@ public class AccountService {
     @Transactional
     public AccountResponseDTO updateDebitCardAccount(String userId, Long accountId, DebitCardAccountRequestDTO debitCardAccountRequestDTO)
             throws BadRequestException {
-        Account account = accountRepository.findByIdAndUser_Id(accountId, userId);
-        if (account == null) throw new EntityNotFoundException("Debit card account not found");
+        Account account = accountRepository.findByIdAndUser_Id(accountId, userId)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found with id: " + accountId));
 
         DebitCardDetail debitCardDetail = debitCardDetailRepository.findById(accountId)
                 .orElseThrow(() -> new EntityNotFoundException("Debit card details not found for account id: " + accountId));
@@ -335,15 +335,13 @@ public class AccountService {
     }
 
     private Account findAndValidateBankAccountForUser(Long accountId, String userId, String field) throws BadRequestException {
-        if(accountId == null){
+        if (accountId == null){
             logger.error("{} account id is null", field);
             throw new BadRequestException(field + " account must be provided");
         }
-        Account account = accountRepository.findByIdAndUser_Id(accountId, userId);
-        if (account == null) {
-            logger.error("Account with id {} not found", accountId);
-            throw new EntityNotFoundException(field + " account not found");
-        }
+        Account account = accountRepository.findByIdAndUser_Id(accountId, userId)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found with id: " + accountId));
+
         if (!account.getAccountGroup().getName().equals(AppConstants.BANK_ACCOUNT_TYPE)) {
             logger.error("{} account must belong to bank account group", field);
             throw new BadRequestException(field + " account must belong to bank account group");

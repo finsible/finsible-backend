@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import org.finsible.backend.dto.request.groups.Create;
 import org.finsible.backend.dto.request.groups.Update;
-import org.finsible.backend.entity.Category;
+import org.finsible.backend.entity.Type;
 import org.finsible.backend.validator.AtLeastOneFieldNotNull;
 
 @Data
@@ -22,7 +22,7 @@ public class CategoryRequestDTO {
 
     // valid values: "INCOME", "EXPENSE"
     @NotNull(groups = Create.class, message = "Category type must be provided")
-    private Category.CategoryType type;
+    private Type type;
 
     private Boolean isSubCategory;
     private Long parentCategoryId;
