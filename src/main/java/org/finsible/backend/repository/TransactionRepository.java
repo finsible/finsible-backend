@@ -37,16 +37,16 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
            "AND (:categoryId IS NULL OR t.category.id = :categoryId) " +
            "AND (:accountId IS NULL OR toAcc.id = :accountId OR fromAcc.id = :accountId) " +
            "AND (:accountGroupId IS NULL OR toAcc.accountGroup.id = :accountGroupId OR fromAcc.accountGroup.id = :accountGroupId) " +
-           "AND (:dateStart IS NULL OR t.transactionDate >= :dateStart) " +
-           "AND (:dateEnd IS NULL OR t.transactionDate <= :dateEnd)")
+           "AND (:startDate IS NULL OR t.transactionDate >= :startDate) " +
+           "AND (:endDate IS NULL OR t.transactionDate <= :endDate)")
     Page<Transaction> findAllWithFilters(
             @Param("userId") String userId,
             @Param("type") Type type,
             @Param("categoryId") Long categoryId,
             @Param("accountId") Long accountId,
             @Param("accountGroupId") Long accountGroupId,
-            @Param("dateStart") Long dateStart,
-            @Param("dateEnd") Long dateEnd,
+            @Param("startDate") Long startDate,
+            @Param("endDate") Long endDate,
             Pageable pageable
     );
 }
