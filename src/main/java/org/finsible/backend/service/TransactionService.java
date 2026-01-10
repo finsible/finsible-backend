@@ -12,12 +12,15 @@ import org.finsible.backend.repository.SupportedCurrencyRepository;
 import org.finsible.backend.repository.TransactionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
-
 @Service
 public class TransactionService {
     private static final Logger logger = LoggerFactory.getLogger(TransactionService.class);
@@ -34,6 +37,35 @@ public class TransactionService {
         this.accountRepository = accountRepository;
         this.categoryRepository = categoryRepository;
         this.transactionRepository = transactionRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<TransactionResponseDTO> getAllTransactions(
+            String userId,
+            Long startDate,
+            Long endDate,
+            Long accountId,
+            Long categoryId,
+            String typeString,
+            int page,
+            int size
+    ) {
+        Type type = null;
+        if (typeString != null && !typeString.isEmpty()) {
+            try {
+                type = Type.valueOf(typeString.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                logger.warn("Invalid transaction type provided: {}", typeString);
+            }
+        }
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "transactionDate", "id"));
+
+        Page<Transaction> transactionPage = transactionRepository.findAllWithFilters(
+                userId, type, categoryId, accountId, null, startDate, endDate, pageable
+        );
+
+        return transactionPage.map(transactionMapper::toTransactionResponseDTO);
     }
 
     @Transactional(readOnly = true)
