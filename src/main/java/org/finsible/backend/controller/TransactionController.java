@@ -8,6 +8,7 @@ import org.finsible.backend.dto.request.groups.Update;
 import org.finsible.backend.dto.response.TransactionResponseDTO;
 import org.finsible.backend.entity.Type;
 import org.finsible.backend.service.TransactionService;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +21,23 @@ public class TransactionController {
 
     public TransactionController(TransactionService transactionService) {
         this.transactionService = transactionService;
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<BaseResponse<Page<TransactionResponseDTO>>> getAllTransactions(
+            @RequestAttribute String userId,
+            @RequestParam(required = false) Long startDate,
+            @RequestParam(required = false) Long endDate,
+            @RequestParam(required = false) Long accountId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String type,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size
+    ) {
+        Page<TransactionResponseDTO> transactions = transactionService.getAllTransactions(
+                userId, startDate, endDate, accountId, categoryId, type, page, size
+        );
+        return ResponseEntity.ok(new BaseResponse<>("Transactions fetched successfully", true, transactions));
     }
 
     @GetMapping("/{id}")
