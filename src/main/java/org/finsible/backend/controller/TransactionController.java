@@ -29,13 +29,14 @@ public class TransactionController {
             @RequestParam(required = false) Long startDate,
             @RequestParam(required = false) Long endDate,
             @RequestParam(required = false) Long accountId,
+            @RequestParam(required = false) Long accountGroupId,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String type,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size
     ) {
         Page<TransactionResponseDTO> transactions = transactionService.getAllTransactions(
-                userId, startDate, endDate, accountId, categoryId, type, page, size
+                userId, startDate, endDate, accountId, accountGroupId, categoryId, type, page, size
         );
         return ResponseEntity.ok(new BaseResponse<>("Transactions fetched successfully", true, transactions));
     }
