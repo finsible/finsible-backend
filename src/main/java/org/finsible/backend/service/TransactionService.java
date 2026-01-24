@@ -19,7 +19,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Objects;
 @Service
 public class TransactionService {
@@ -45,52 +44,19 @@ public class TransactionService {
             Long startDate,
             Long endDate,
             Long accountId,
+            Long accountGroupId,
             Long categoryId,
-            String typeString,
+            Type type,
             int page,
             int size
     ) {
-        Type type = null;
-        if (typeString != null && !typeString.isEmpty()) {
-            try {
-                type = Type.valueOf(typeString.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                logger.warn("Invalid transaction type provided: {}", typeString);
-            }
-        }
-
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "transactionDate", "id"));
 
         Page<Transaction> transactionPage = transactionRepository.findAllWithFilters(
-                userId, type, categoryId, accountId, null, startDate, endDate, pageable
+                userId, type, categoryId, accountId, accountGroupId, startDate, endDate, pageable
         );
 
         return transactionPage.map(transactionMapper::toTransactionResponseDTO);
-    }
-
-    @Transactional(readOnly = true)
-    public List<TransactionResponseDTO> getTransactionsByType(String userId, Type type) {
-        List<Transaction> transactionsByType = transactionRepository.findAllByTypeAndCreatedBy(type, userId);
-        return transactionsByType.stream().map(transactionMapper::toTransactionResponseDTO).toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<TransactionResponseDTO> getTransactionsByCategory(String userId, Long categoryId) {
-        List<Transaction> transactionsByCategory = transactionRepository.findAllByCategory_IdAndCreatedBy(categoryId, userId);
-        return transactionsByCategory.stream().map(transactionMapper::toTransactionResponseDTO).toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<TransactionResponseDTO> getTransactionsByAccount(String userId, Long accountId) {
-        List<Transaction> transactionsByAccount = transactionRepository.findAllByToAccount_IdOrFromAccount_IdAndCreatedBy(accountId, accountId, userId);
-        return transactionsByAccount.stream().map(transactionMapper::toTransactionResponseDTO).toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<TransactionResponseDTO> getTransactionsByAccountGroup(String userId, Long accountGroupId) {
-        List<Transaction> transactionsByAccountGroup = transactionRepository
-                .findAllByToAccount_AccountGroup_IdOrFromAccount_AccountGroup_IdAndCreatedBy(accountGroupId, accountGroupId, userId);
-        return transactionsByAccountGroup.stream().map(transactionMapper::toTransactionResponseDTO).toList();
     }
 
     @Transactional(readOnly = true)
