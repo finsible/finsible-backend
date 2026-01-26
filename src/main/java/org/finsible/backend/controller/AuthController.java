@@ -55,7 +55,7 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<BaseResponse<UserResponseDTO>> getUser(@RequestAttribute String userId, @RequestParam String deviceType) {
+    public ResponseEntity<BaseResponse<UserResponseDTO>> getUser(@RequestAttribute String userId, @RequestParam(required = false) String deviceType) {
         UserResponseDTO userResponseDTO = authService.getUser(userId);
         return ResponseEntity.ok(new BaseResponse<>(AppConstants.DATA_FETCH_SUCCESS, true, userResponseDTO));
     }
