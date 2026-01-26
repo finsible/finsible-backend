@@ -26,7 +26,7 @@ public class AccountController {
         this.accountService = accountService;
     }
 
-    @PostMapping("/{accountGroupId}/")
+    @PostMapping("/{accountGroupId}")
     public ResponseEntity<BaseResponse<AccountResponseDTO>> createAccount(@RequestAttribute("userId") String userId, @PathVariable Long accountGroupId,
                                                                          @Validated(Create.class) @RequestBody AccountRequestDTO accountRequestDTO) {
 
@@ -34,7 +34,7 @@ public class AccountController {
         return ResponseEntity.ok(new BaseResponse<>("Account created successfully", true, response));
     }
 
-    @GetMapping("/all")
+    @GetMapping
     public ResponseEntity<BaseResponse<List<AccountResponseDTO>>> getAccount(@RequestAttribute("userId") String userId) {
         return ResponseEntity.ok(new BaseResponse<>("Accounts fetched successfully", true, accountService.getAccounts(userId)));
     }
@@ -52,7 +52,7 @@ public class AccountController {
         return ResponseEntity.ok(new BaseResponse<>("Deleted account", true));
     }
 
-    @PostMapping("/credit-card/")
+    @PostMapping("/credit-card")
     public ResponseEntity<BaseResponse<AccountResponseDTO>> createCreditCardAccount(@RequestAttribute("userId") String userId,
                                                                                     @Validated(Create.class) @RequestBody CreditCardAccountRequestDTO creditCardAccountRequestDTO) throws BadRequestException {
         AccountResponseDTO response = accountService.createCreditCardAccount(userId, creditCardAccountRequestDTO);
@@ -67,7 +67,7 @@ public class AccountController {
         return ResponseEntity.ok(new BaseResponse<>("Credit card account updated successfully", true, response));
     }
 
-    @PostMapping("/debit-card/")
+    @PostMapping("/debit-card")
     public ResponseEntity<BaseResponse<AccountResponseDTO>> createDebitCardAccount(@RequestAttribute("userId") String userId,
                                                                                   @Validated(Create.class) @RequestBody DebitCardAccountRequestDTO debitCardAccountRequestDTO) throws BadRequestException {
         AccountResponseDTO response = accountService.createDebitCardAccount(userId, debitCardAccountRequestDTO);

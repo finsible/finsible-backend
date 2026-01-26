@@ -21,13 +21,13 @@ public class AccountGroupController {
         this.accountGroupService = accountGroupService;
     }
 
-    @GetMapping("/all")
+    @GetMapping
     public ResponseEntity<BaseResponse<List<AccountGroupResponseDTO>>> getAccountGroups(@RequestAttribute String userId) {
         List<AccountGroupResponseDTO> accountGroups = accountGroupService.getAccountGroups(userId);
         return ResponseEntity.ok(new BaseResponse<>("Account groups fetched successfully", true, accountGroups));
     }
 
-    @PostMapping("/")
+    @PostMapping
     public ResponseEntity<BaseResponse<AccountGroupResponseDTO>> createAccountGroup(@RequestAttribute String userId,
                                                                                     @Validated(Create.class) @RequestBody AccountGroupRequestDTO accountGroupRequestDTO) {
         AccountGroupResponseDTO responseDTO = accountGroupService.createAccountGroup(userId, accountGroupRequestDTO);

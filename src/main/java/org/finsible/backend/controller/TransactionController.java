@@ -12,7 +12,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 @RestController
 @RequestMapping("/transactions")
@@ -23,7 +22,7 @@ public class TransactionController {
         this.transactionService = transactionService;
     }
 
-    @GetMapping("/all")
+    @GetMapping
     public ResponseEntity<BaseResponse<Page<TransactionResponseDTO>>> getAllTransactions(
             @RequestAttribute String userId,
             @RequestParam(required = false) Long startDate,
@@ -47,7 +46,7 @@ public class TransactionController {
         return ResponseEntity.ok(new BaseResponse<>("Transaction fetched successfully", true, transaction));
     }
 
-    @PostMapping("/")
+    @PostMapping
     public ResponseEntity<BaseResponse<TransactionResponseDTO>> createTransaction(@RequestAttribute String userId,
                                                                                   @Validated(Create.class) @RequestBody TransactionRequestDTO transactionRequestDTO) throws BadRequestException {
         TransactionResponseDTO createdTransaction = transactionService.createTransaction(userId, transactionRequestDTO);

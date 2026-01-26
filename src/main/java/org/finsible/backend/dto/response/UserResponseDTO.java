@@ -20,4 +20,7 @@ public class UserResponseDTO {
     private Instant accountCreated;
     private Instant lastLoggedIn;
     private String jwt;
+    private String defaultCurrencyCode;
+    private String defaultCurrencySymbol;
+    private String defaultLanguageCode;
 }

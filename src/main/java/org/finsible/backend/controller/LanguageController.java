@@ -23,7 +23,7 @@ public class LanguageController {
         this.languageMapper = languageMapper;
     }
 
-    @GetMapping("/all")
+    @GetMapping
     public ResponseEntity<BaseResponse<List<LanguageResponseDTO>>> getAllLanguages() {
         List<LanguageResponseDTO> languages = languageService.getAllSupportedLanguages();
         return ResponseEntity.ok(

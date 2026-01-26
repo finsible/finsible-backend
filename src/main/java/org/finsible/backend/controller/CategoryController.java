@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/category")
+@RequestMapping("/categories")
 public class CategoryController {
     private CategoryService categoryService;
 
@@ -26,18 +26,16 @@ public class CategoryController {
         this.categoryService = categoryService;
     }
 
-    @GetMapping("/all")
-    public ResponseEntity<BaseResponse<List<CategoryResponseDTO>>> getCategories(@RequestAttribute("userId") String userId) {
-       return ResponseEntity.ok(new BaseResponse<>("Categories fetched successfully", true, categoryService.getAllCategories(userId)));
-    }
-
-    @GetMapping("/type/{type}")
-    public ResponseEntity<BaseResponse<List<CategoryResponseDTO>>> getCategoriesByType(@RequestAttribute("userId") String userId, @PathVariable Type type) {
+    @GetMapping
+    public ResponseEntity<BaseResponse<List<CategoryResponseDTO>>> getCategories(@RequestAttribute("userId") String userId, @RequestParam(required = false) Type type) {
+        if (type == null) {
+            return ResponseEntity.ok(new BaseResponse<>("Categories fetched successfully", true, categoryService.getAllCategories(userId)));
+        }
         return ResponseEntity.ok(new BaseResponse<>("Categories of type " + type + " fetched successfully", true, categoryService.getCategoriesByType(userId, type)));
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    @PostMapping("/default/")
+    @PostMapping("/default")
     public ResponseEntity<BaseResponse<CategoryResponseDTO>> createDefaultCategory(@Validated(Create.class) @RequestBody CategoryRequestDTO categoryRequestDTO)
             throws BadRequestException {
         return ResponseEntity.ok(new BaseResponse<>("Default category created successfully", true, categoryService.createDefaultCategory(categoryRequestDTO)));
@@ -57,7 +55,7 @@ public class CategoryController {
         return ResponseEntity.ok(new BaseResponse<>("Default category deleted successfully", true));
     }
 
-    @PostMapping("/")
+    @PostMapping
     public ResponseEntity<BaseResponse<CategoryResponseDTO>> createUserCategory(@RequestAttribute("userId") String userId, @Validated(Create.class) @RequestBody CategoryRequestDTO categoryRequestDTO)
             throws BadRequestException {
         return ResponseEntity.ok(new BaseResponse<>("Category created successfully", true, categoryService.createUserCategory(userId, categoryRequestDTO)));
