@@ -8,13 +8,14 @@ import org.finsible.backend.dto.request.groups.Update;
 import org.finsible.backend.dto.response.TransactionResponseDTO;
 import org.finsible.backend.entity.Type;
 import org.finsible.backend.service.TransactionService;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/transaction")
+@RequestMapping("/transactions")
 public class TransactionController {
     private final TransactionService transactionService;
 
@@ -22,34 +23,28 @@ public class TransactionController {
         this.transactionService = transactionService;
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<BaseResponse<Page<TransactionResponseDTO>>> getAllTransactions(
+            @RequestAttribute String userId,
+            @RequestParam(required = false) Long startDate,
+            @RequestParam(required = false) Long endDate,
+            @RequestParam(required = false) Long accountId,
+            @RequestParam(required = false) Long accountGroupId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Type type,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size
+    ) {
+        Page<TransactionResponseDTO> transactions = transactionService.getAllTransactions(
+                userId, startDate, endDate, accountId, accountGroupId, categoryId, type, page, size
+        );
+        return ResponseEntity.ok(new BaseResponse<>("Transactions fetched successfully", true, transactions));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<BaseResponse<TransactionResponseDTO>> getTransactionById(@RequestAttribute String userId, @PathVariable Long id) {
         TransactionResponseDTO transaction = transactionService.getTransactionById(userId, id);
         return ResponseEntity.ok(new BaseResponse<>("Transaction fetched successfully", true, transaction));
-    }
-
-    @GetMapping("/all/{type}")
-    public ResponseEntity<BaseResponse<List<TransactionResponseDTO>>> getTransactionsByType(@RequestAttribute String userId, @PathVariable Type type) {
-        List<TransactionResponseDTO> transactions = transactionService.getTransactionsByType(userId, type);
-        return ResponseEntity.ok(new BaseResponse<>("Transactions of type " + type + " fetched successfully", true, transactions));
-    }
-
-    @GetMapping("/all/category/{categoryId}")
-    public ResponseEntity<BaseResponse<List<TransactionResponseDTO>>> getTransactionsByCategory(@RequestAttribute String userId, @PathVariable Long categoryId) {
-        List<TransactionResponseDTO> transactions = transactionService.getTransactionsByCategory(userId, categoryId);
-        return ResponseEntity.ok(new BaseResponse<>("Transactions for category ID " + categoryId + " fetched successfully", true, transactions));
-    }
-
-    @GetMapping("/all/account/{accountId}")
-    public ResponseEntity<BaseResponse<List<TransactionResponseDTO>>> getTransactionsByAccount(@RequestAttribute String userId, @PathVariable Long accountId) {
-        List<TransactionResponseDTO> transactions = transactionService.getTransactionsByAccount(userId, accountId);
-        return ResponseEntity.ok(new BaseResponse<>("Transactions for account ID " + accountId + " fetched successfully", true, transactions));
-    }
-
-    @GetMapping("/all/account-group/{accountGroupId}")
-    public ResponseEntity<BaseResponse<List<TransactionResponseDTO>>> getTransactionsByAccountGroup(@RequestAttribute String userId, @PathVariable Long accountGroupId) {
-        List<TransactionResponseDTO> transactions = transactionService.getTransactionsByAccountGroup(userId, accountGroupId);
-        return ResponseEntity.ok(new BaseResponse<>("Transactions for account group ID " + accountGroupId + " fetched successfully", true, transactions));
     }
 
     @PostMapping("/")

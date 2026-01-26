@@ -12,12 +12,14 @@ import org.finsible.backend.repository.SupportedCurrencyRepository;
 import org.finsible.backend.repository.TransactionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Objects;
-
 @Service
 public class TransactionService {
     private static final Logger logger = LoggerFactory.getLogger(TransactionService.class);
@@ -37,28 +39,24 @@ public class TransactionService {
     }
 
     @Transactional(readOnly = true)
-    public List<TransactionResponseDTO> getTransactionsByType(String userId, Type type) {
-        List<Transaction> transactionsByType = transactionRepository.findAllByTypeAndCreatedBy(type, userId);
-        return transactionsByType.stream().map(transactionMapper::toTransactionResponseDTO).toList();
-    }
+    public Page<TransactionResponseDTO> getAllTransactions(
+            String userId,
+            Long startDate,
+            Long endDate,
+            Long accountId,
+            Long accountGroupId,
+            Long categoryId,
+            Type type,
+            int page,
+            int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "transactionDate", "id"));
 
-    @Transactional(readOnly = true)
-    public List<TransactionResponseDTO> getTransactionsByCategory(String userId, Long categoryId) {
-        List<Transaction> transactionsByCategory = transactionRepository.findAllByCategory_IdAndCreatedBy(categoryId, userId);
-        return transactionsByCategory.stream().map(transactionMapper::toTransactionResponseDTO).toList();
-    }
+        Page<Transaction> transactionPage = transactionRepository.findAllWithFilters(
+                userId, type, categoryId, accountId, accountGroupId, startDate, endDate, pageable
+        );
 
-    @Transactional(readOnly = true)
-    public List<TransactionResponseDTO> getTransactionsByAccount(String userId, Long accountId) {
-        List<Transaction> transactionsByAccount = transactionRepository.findAllByToAccount_IdOrFromAccount_IdAndCreatedBy(accountId, accountId, userId);
-        return transactionsByAccount.stream().map(transactionMapper::toTransactionResponseDTO).toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<TransactionResponseDTO> getTransactionsByAccountGroup(String userId, Long accountGroupId) {
-        List<Transaction> transactionsByAccountGroup = transactionRepository
-                .findAllByToAccount_AccountGroup_IdOrFromAccount_AccountGroup_IdAndCreatedBy(accountGroupId, accountGroupId, userId);
-        return transactionsByAccountGroup.stream().map(transactionMapper::toTransactionResponseDTO).toList();
+        return transactionPage.map(transactionMapper::toTransactionResponseDTO);
     }
 
     @Transactional(readOnly = true)
