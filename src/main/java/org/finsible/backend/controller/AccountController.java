@@ -34,7 +34,7 @@ public class AccountController {
         return ResponseEntity.ok(new BaseResponse<>("Account created successfully", true, response));
     }
 
-    @GetMapping("/all")
+    @GetMapping
     public ResponseEntity<BaseResponse<List<AccountResponseDTO>>> getAccount(@RequestAttribute("userId") String userId) {
         return ResponseEntity.ok(new BaseResponse<>("Accounts fetched successfully", true, accountService.getAccounts(userId)));
     }

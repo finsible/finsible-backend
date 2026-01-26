@@ -33,6 +33,7 @@ public class TransactionRequestDTO {
     @Size(max = 255, message = "Description can have maximum 255 characters", groups = {Create.class, Update.class})
     private String description;
 
+    // these are used for space transactions
     private Long spaceId;
 
     private BigDecimal userShare;
