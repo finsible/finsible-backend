@@ -22,7 +22,7 @@ public class CurrencyController {
         this.currencyMapper = currencyMapper;
     }
 
-    @GetMapping("/all")
+    @GetMapping
     public ResponseEntity<BaseResponse<List<CurrencyResponseDTO>>> getAllCurrencies() {
         List<CurrencyResponseDTO> currencies = currencyService.getAllSupportedCurrencies();
         return ResponseEntity.ok(

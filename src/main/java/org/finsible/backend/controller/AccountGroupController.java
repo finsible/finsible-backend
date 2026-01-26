@@ -27,7 +27,7 @@ public class AccountGroupController {
         return ResponseEntity.ok(new BaseResponse<>("Account groups fetched successfully", true, accountGroups));
     }
 
-    @PostMapping("/")
+    @PostMapping
     public ResponseEntity<BaseResponse<AccountGroupResponseDTO>> createAccountGroup(@RequestAttribute String userId,
                                                                                     @Validated(Create.class) @RequestBody AccountGroupRequestDTO accountGroupRequestDTO) {
         AccountGroupResponseDTO responseDTO = accountGroupService.createAccountGroup(userId, accountGroupRequestDTO);

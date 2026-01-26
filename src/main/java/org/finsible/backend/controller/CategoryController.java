@@ -35,7 +35,7 @@ public class CategoryController {
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    @PostMapping("/default/")
+    @PostMapping("/default")
     public ResponseEntity<BaseResponse<CategoryResponseDTO>> createDefaultCategory(@Validated(Create.class) @RequestBody CategoryRequestDTO categoryRequestDTO)
             throws BadRequestException {
         return ResponseEntity.ok(new BaseResponse<>("Default category created successfully", true, categoryService.createDefaultCategory(categoryRequestDTO)));
@@ -55,7 +55,7 @@ public class CategoryController {
         return ResponseEntity.ok(new BaseResponse<>("Default category deleted successfully", true));
     }
 
-    @PostMapping("/")
+    @PostMapping
     public ResponseEntity<BaseResponse<CategoryResponseDTO>> createUserCategory(@RequestAttribute("userId") String userId, @Validated(Create.class) @RequestBody CategoryRequestDTO categoryRequestDTO)
             throws BadRequestException {
         return ResponseEntity.ok(new BaseResponse<>("Category created successfully", true, categoryService.createUserCategory(userId, categoryRequestDTO)));
