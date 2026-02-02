@@ -77,8 +77,7 @@ Finsible uses JWT (JSON Web Token) for authentication. Tokens can be provided vi
 All endpoints except the following require authentication:
 - `POST /auth/sign-in/google`
 - `POST /auth/sign-in/google-code`
-- `GET /actuator/**`
-- `GET /health`
+- `GET /actuator/health`
 
 ---
 

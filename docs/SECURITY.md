@@ -130,8 +130,7 @@ The following endpoints do not require authentication:
 .requestMatchers(
     "/auth/sign-in/google-code",
     "/auth/sign-in/google",
-    "/actuator/**",
-    "/health"
+    "/actuator/health",
 ).permitAll()
 ```
 
