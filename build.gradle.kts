@@ -35,6 +35,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("io.jsonwebtoken:jjwt-api:0.12.6")
     implementation("org.flywaydb:flyway-core:10.21.0")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.5")
+    implementation("org.apache.commons:commons-lang3:3.18.0")
     implementation("org.mapstruct:mapstruct:1.5.5.Final")
     runtimeOnly("org.flywaydb:flyway-database-postgresql:10.21.0")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")

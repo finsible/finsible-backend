@@ -38,7 +38,7 @@ public class LanguageController {
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    @PostMapping("/")
+    @PostMapping
     public ResponseEntity<BaseResponse<LanguageResponseDTO>> createSupportedLanguage(@Valid @RequestBody LanguageRequestDTO languageRequestDTO) {
         LanguageResponseDTO responseDTO = languageService.createSupportedLanguage(languageRequestDTO);
         return ResponseEntity.ok(new BaseResponse<>("Successfully added new supported language", true, responseDTO));
