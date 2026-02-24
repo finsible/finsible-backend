@@ -12,8 +12,8 @@ Get Finsible up and running in 5 minutes.
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/finsible.git
-cd finsible
+git clone https://github.com/finsible/finsible-backend.git
+cd finsible-backend
 
 # Copy environment template
 cp .env.example .env
@@ -52,7 +52,9 @@ psql -U postgres -c "CREATE DATABASE finsible_db;"
 
 ```bash
 # Load environment variables
-export $(cat .env | xargs)
+set -a; 
+source .env;
+set +a;
 
 # Run with Gradle
 ./gradlew bootRun

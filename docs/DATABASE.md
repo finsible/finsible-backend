@@ -563,15 +563,7 @@ src/main/resources/db/migration/
 | V3      | `V3__update_table_schema.sql`   | Adds transaction_date, from_account_id |
 
 ### Running Migrations
-
-```bash
-# Via Gradle
-./gradlew flywayMigrate
-
-# Via Spring Boot (automatic on startup)
-# Set in application.properties:
-spring.flyway.enabled=true
-```
+Migrations are applied automatically by Spring Boot on application startup.
 
 ### Creating New Migrations
 

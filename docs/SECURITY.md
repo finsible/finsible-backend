@@ -115,12 +115,12 @@ Finsible uses Google OAuth 2.0 for authentication:
 
 ### Authentication Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/auth/sign-in/google` | POST | Sign in with Google ID token |
-| `/auth/sign-in/google-code` | POST | Sign in with Google auth code |
-| `/auth/me` | GET | Get current user (authenticated) |
-| `/auth/sign-out` | POST | Sign out user |
+| Endpoint                    | Method | Description                      |
+|-----------------------------|--------|----------------------------------|
+| `/auth/sign-in/google`      | POST   | Sign in with Google ID token     |
+| `/auth/sign-in/google-code` | POST   | Sign in with Google auth code    |
+| `/auth/me`                  | GET    | Get current user (authenticated) |
+| `/auth/sign-out`            | POST   | Sign out user                    |
 
 ### Public Endpoints
 
@@ -142,10 +142,10 @@ The following endpoints do not require authentication:
 
 Finsible implements two primary roles:
 
-| Role | Description |
-|------|-------------|
-| `USER` | Standard user role (default) |
-| `ADMIN` | Administrative access |
+| Role    | Description                  |
+|---------|------------------------------|
+| `USER`  | Standard user role (default) |
+| `ADMIN` | Administrative access        |
 
 ### Role Assignment
 
@@ -172,15 +172,15 @@ public ResponseEntity<...> createDefaultCategory(...) {
 
 ### Protected Admin Endpoints
 
-| Endpoint | Description |
-|----------|-------------|
-| `POST /categories/default` | Create default category |
-| `PUT /categories/default/{id}` | Update default category |
-| `DELETE /categories/default/{id}` | Delete default category |
-| `POST /supported-currencies/` | Add supported currency |
+| Endpoint                            | Description               |
+|-------------------------------------|---------------------------|
+| `POST /categories/default`          | Create default category   |
+| `PUT /categories/default/{id}`      | Update default category   |
+| `DELETE /categories/default/{id}`   | Delete default category   |
+| `POST /supported-currencies/`       | Add supported currency    |
 | `DELETE /supported-currencies/{id}` | Remove supported currency |
-| `POST /supported-languages/` | Add supported language |
-| `DELETE /supported-languages/{id}` | Remove supported language |
+| `POST /supported-languages/`        | Add supported language    |
+| `DELETE /supported-languages/{id}`  | Remove supported language |
 
 ---
 
@@ -205,10 +205,10 @@ public ResponseEntity<...> createDefaultCategory(...) {
 
 ### Token Configuration
 
-| Setting | Environment Variable | Description |
-|---------|---------------------|-------------|
-| Secret Key | `SECRET_KEY` | HMAC-SHA256 signing key |
-| Expiration | `JWT_EXPIRATION` | Token lifetime (milliseconds) |
+| Setting    | Environment Variable | Description                   |
+|------------|----------------------|-------------------------------|
+| Secret Key | `SECRET_KEY`         | HMAC-SHA256 signing key       |
+| Expiration | `JWT_EXPIRATION`     | Token lifetime (milliseconds) |
 
 ### Recommended Settings
 
@@ -264,13 +264,13 @@ SecurityContextHolder.getContext().setAuthentication(authentication);
 
 ### Cookie Configuration
 
-| Setting | Development | Production |
-|---------|-------------|------------|
-| Secure | `false` | `true` |
-| SameSite | `Lax` | `Strict` |
-| HttpOnly | `true` | `true` |
-| Path | `/` | `/` |
-| Max-Age | JWT expiration | JWT expiration |
+| Setting  | Development    | Production     |
+|----------|----------------|----------------|
+| Secure   | `false`        | `true`         |
+| SameSite | `Lax`          | `Strict`       |
+| HttpOnly | `true`         | `true`         |
+| Path     | `/`            | `/`            |
+| Max-Age  | JWT expiration | JWT expiration |
 
 ### Configuration Properties
 

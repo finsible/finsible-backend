@@ -27,9 +27,12 @@ Finsible is a robust RESTful API backend for personal finance management built w
 - **💰 Transaction Management** - Track income, expenses, and transfers
 - **🏦 Multiple Account Types** - Support for cash, bank accounts, credit cards, debit cards, and loans
 - **📊 Category Management** - Organize transactions with customizable categories
+- **📝 Audit Trail** - Full audit logging for all entities
+
+### Future Enhancements (Planned)
 - **💱 Multi-Currency Support** - Handle multiple currencies with configurable defaults
 - **👥 Space/Group Transactions** - Split expenses and track shared spending
-- **📝 Audit Trail** - Full audit logging for all entities
+
 
 ## 🛠 Technology Stack
 
@@ -60,7 +63,7 @@ Finsible is a robust RESTful API backend for personal finance management built w
 1. **Clone the repository**
    ```bash
    git clone https://github.com/finsible/finsible-backend.git
-   cd finsible
+   cd finsible-backend
    ```
 
 2. **Set up PostgreSQL database**
@@ -81,23 +84,17 @@ Finsible is a robust RESTful API backend for personal finance management built w
    # Edit with your values (see Configuration section)
    ```
 
-4. **Run database migrations**
-   ```bash
-   ./gradlew flywayMigrate
-   ```
-
-5. **Build the application**
+4. **Build the application**
    ```bash
    ./gradlew build
    ```
 
-6. **Run the application**
+5. **Run the application**
    ```bash
    ./gradlew bootRun
    ```
 
-The API will be available at `http://localhost:9090` (dev) or `http://localhost:8080` (default).
-
+With the default configuration (where the `dev` profile is active), the API will be available at `http://localhost:9090`. If you disable the `dev` profile or run with a different profile, Spring Boot's default port `8080` will apply.
 ### Quick Start with Docker (Optional)
 
 ```bash
@@ -363,7 +360,7 @@ java -jar build/libs/Finsible-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod
 ## 📞 Support
 
 - 📧 Email: maitrymakwana196@gmail.com
-- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/finsible/issues)
+- 🐛 Issues: [GitHub Issues](https://github.com/finsible/finsible-backend/issues)
 
 ---
 

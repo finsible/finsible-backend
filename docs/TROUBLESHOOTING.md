@@ -23,9 +23,6 @@ This document provides solutions to common issues encountered when developing, d
 ```bash
 # Health endpoint
 curl http://localhost:9090/actuator/health
-
-# Check if application is running
-curl -I http://localhost:9090/health
 ```
 
 ### Check Database Connection
@@ -34,8 +31,12 @@ curl -I http://localhost:9090/health
 # Test PostgreSQL connection
 psql -h localhost -U your_username -d finsible_db -c "SELECT 1"
 
-# Check Flyway migration status
-./gradlew flywayInfo
+# Flyway migrations run automatically on application startup.
+# Check recent Flyway logs:
+grep -i "flyway" logs/finsible.log | tail ~50
+# Alternatively, if you have Flyway CLI configured, run (adjust
+# config as needed) :
+# flyway info
 ```
 
 ### View Application Logs
@@ -166,7 +167,7 @@ FlywayException: Validate failed: Migrations have failed validation
 ```
 
 **Solution:**
-
+Check status using the Flyway CLI (configured via `flyway.conf` or environment variables):
 1. Check migration status:
    ```bash
    ./gradlew flywayInfo
@@ -471,7 +472,7 @@ Check the validation rules for the endpoint. Required fields for creation:
 
 ---
 
-### Issue: 404 Not Found - Entity
+### Issue: 400 Bad Request - Entity
 
 **Symptoms:**
 ```json
@@ -537,11 +538,10 @@ HttpMessageNotReadableException: Required request body is missing
    # Should be Java 21+
    ```
 
-3. Update Gradle wrapper:
+3. Update Gradle wrapper to the latest supported Gradle version:
    ```bash
-   ./gradlew wrapper --gradle-version 8.5
+   •/gradlew wrapper --gradle-version <latest-supported-version>
    ```
-
 ---
 
 ### Issue: MapStruct not generating implementations
