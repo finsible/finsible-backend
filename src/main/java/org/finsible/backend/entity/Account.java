@@ -7,7 +7,6 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import java.math.BigDecimal;
 import java.time.Instant;
 
@@ -23,11 +22,11 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id") // do we need nullable here?
     private User user;  // default cash account is linked to user
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_group_id", nullable = false)
     private AccountGroup accountGroup;
 
@@ -39,7 +38,7 @@ public class Account {
 
     private BigDecimal balance;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "currency_code", referencedColumnName = "code", nullable = false)
     private SupportedCurrency currency;
 
@@ -64,8 +63,4 @@ public class Account {
 
     @LastModifiedBy
     private String updatedBy;
-
-//    @JdbcTypeCode(SqlTypes.JSON)
-//    @Column(columnDefinition = "jsonb")
-//    private JsonNode otherFields; // Dynamic fields stored as JSON
 }

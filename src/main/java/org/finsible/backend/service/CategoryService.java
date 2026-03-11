@@ -54,16 +54,8 @@ public class CategoryService {
     public List<CategoryResponseDTO> getCategoriesByType(String userId, Type type) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
-
-        List<Category> categoriesByType = categoryRepository.findCategoriesByTypeAndCreatedBy(type, null);
-
-        if(!user.isCategoriesEdited()) {
-            logger.info("Getting default categories of type {} for user with id: {}", type, userId);
-            return categoriesByType.stream().map(categoryMapper::toCategoryResponseDTO).toList();
-        }
-
+        List<Category> categoriesByType = categoryRepository.findCategoriesForUserByType(type, user);
         logger.info("Getting default and user-specific categories of type {} for user with id: {}", type, userId);
-        categoriesByType.addAll(categoryRepository.findCategoriesByTypeAndCreatedBy(type, user));
         return categoriesByType.stream().map(categoryMapper::toCategoryResponseDTO).toList();
     }
 

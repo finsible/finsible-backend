@@ -21,7 +21,11 @@ public class TransactionResponseDTO {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Long toAccountId;
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String toAccountName;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Long fromAccountId;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String fromAccountName;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Long spaceId;
     @JsonInclude(JsonInclude.Include.NON_NULL)

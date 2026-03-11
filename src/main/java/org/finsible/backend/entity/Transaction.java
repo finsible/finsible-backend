@@ -38,25 +38,25 @@ public class Transaction {
     @Builder.Default
     private Boolean isSplit = false;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private User paidBy; // User who paid the amount
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private Category category;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private Account toAccount; // used in income and transfer
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private Account fromAccount; // used in expense and transfer
 
     private String description;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "space_id")
     private Space space;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "currency_code", referencedColumnName = "code", nullable = false)
     private SupportedCurrency currency;
 

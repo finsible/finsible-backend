@@ -17,7 +17,9 @@ public interface TransactionMapper {
 
     @Mapping(source = "space.id", target = "spaceId")
     @Mapping(source = "fromAccount.id", target = "fromAccountId")
+    @Mapping(source = "fromAccount.name", target = "fromAccountName")
     @Mapping(source = "toAccount.id", target = "toAccountId")
+    @Mapping(source = "toAccount.name", target = "toAccountName")
     @Mapping(source = "category.id", target = "categoryId")
     @Mapping(source = "category.name", target = "categoryName")
     @Mapping(source = "currency.code", target = "currency")
