@@ -27,6 +27,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
            "LEFT JOIN FETCH t.fromAccount fromAcc " +
            "LEFT JOIN FETCH t.category category " +
            "LEFT JOIN FETCH t.currency " +
+            "LEFT JOIN FETCH t.space " +
            "WHERE t.createdBy = :userId " +
            "AND (:type IS NULL OR t.type = :type) " +
            "AND (:categoryId IS NULL OR category.id = :categoryId) " +
