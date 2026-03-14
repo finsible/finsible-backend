@@ -34,7 +34,7 @@ public class Space {
 
     private BigDecimal totalSpends;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "currency_code", referencedColumnName = "code", nullable = false)
     private SupportedCurrency currency;
 

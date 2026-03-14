@@ -35,7 +35,7 @@ public class AccountGroup {
 
     private Integer displayOrder;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User createdBy;
 

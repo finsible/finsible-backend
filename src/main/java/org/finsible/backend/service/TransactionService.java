@@ -3,6 +3,7 @@ package org.finsible.backend.service;
 import org.apache.coyote.BadRequestException;
 import org.finsible.backend.CustomExceptionHandler.EntityNotFoundException;
 import org.finsible.backend.dto.request.TransactionRequestDTO;
+import org.finsible.backend.dto.response.DailyTransactionSummaryDTO;
 import org.finsible.backend.dto.response.TransactionResponseDTO;
 import org.finsible.backend.entity.*;
 import org.finsible.backend.mapper.TransactionMapper;
@@ -19,7 +20,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Objects;
+
 @Service
 public class TransactionService {
     private static final Logger logger = LoggerFactory.getLogger(TransactionService.class);
@@ -39,24 +42,36 @@ public class TransactionService {
     }
 
     @Transactional(readOnly = true)
-    public Page<TransactionResponseDTO> getAllTransactions(
-            String userId,
-            Long startDate,
-            Long endDate,
-            Long accountId,
-            Long accountGroupId,
-            Long categoryId,
-            Type type,
-            int page,
-            int size
-    ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "transactionDate", "id"));
+    public Page<TransactionResponseDTO> getAllTransactions(String userId, Long startDate, Long endDate, Long accountId, Long accountGroupId, Long categoryId,
+                                                           Type type, BigDecimal minAmount, BigDecimal maxAmount, String sortBy, String search, int page, int size) {
+        Sort sort = getSortFromSortBy(sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
 
         Page<Transaction> transactionPage = transactionRepository.findAllWithFilters(
-                userId, type, categoryId, accountId, accountGroupId, startDate, endDate, pageable
+                userId, type, categoryId, accountId, accountGroupId, startDate, endDate, minAmount, maxAmount, search, pageable
         );
 
         return transactionPage.map(transactionMapper::toTransactionResponseDTO);
+    }
+
+    private Sort getSortFromSortBy(String sortBy) {
+        if (sortBy == null) {
+            return Sort.by(Sort.Direction.DESC, "transactionDate", "id");
+        }
+        return switch (sortBy.toLowerCase()) {
+            case "oldest" -> Sort.by(Sort.Direction.ASC, "transactionDate", "id");
+            case "amount_high" -> Sort.by(Sort.Direction.DESC, "totalAmount", "transactionDate", "id");
+            case "amount_low" -> Sort.by(Sort.Direction.ASC, "totalAmount", "transactionDate", "id");
+            default -> Sort.by(Sort.Direction.DESC, "transactionDate", "id"); // "newest" or default
+        };
+    }
+
+    @Transactional(readOnly = true)
+    public List<DailyTransactionSummaryDTO> getDailyTransactionsSummary(String userId, Long startDate, Long endDate, Long accountId, Long accountGroupId,
+                                                                        Long categoryId, Type type) {
+        return transactionRepository.findDailyTransactionSummary(
+                userId, type, categoryId, accountId, accountGroupId, startDate, endDate
+        );
     }
 
     @Transactional(readOnly = true)

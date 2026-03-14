@@ -29,7 +29,7 @@ public class Category {
 
     private String icon;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User createdBy;
 
@@ -37,7 +37,7 @@ public class Category {
     @Builder.Default
     private Boolean isSubCategory = false;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_category_id")
     private Category parentCategory; // if isSubCategory is true, this must be set
 
