@@ -14,6 +14,13 @@ import java.util.Optional;
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
     @Query("SELECT t FROM Transaction t " +
+           "LEFT JOIN FETCH t.toAccount " +
+           "LEFT JOIN FETCH t.fromAccount " +
+           "WHERE t.id IN :ids AND t.createdBy = :createdBy")
+    List<Transaction> findAllByIdInAndCreatedByWithAccounts(@Param("ids") List<Long> ids,
+                                                            @Param("createdBy") String createdBy);
+
+    @Query("SELECT t FROM Transaction t " +
            "LEFT JOIN FETCH t.toAccount toAcc " +
            "LEFT JOIN FETCH t.fromAccount fromAcc " +
            "LEFT JOIN FETCH t.category " +
