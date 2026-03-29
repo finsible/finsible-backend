@@ -87,7 +87,7 @@ public class TransactionController {
     @DeleteMapping("/bulk")
     public ResponseEntity<BaseResponse<Void>> deleteTransactions(
             @RequestAttribute String userId,
-            @RequestBody List<Long> transactionIds
+            @RequestBody(required = false) List<Long> transactionIds
     ) {
         transactionService.deleteTransactions(userId, transactionIds);
         return ResponseEntity.ok(new BaseResponse<>("Transactions deleted successfully", true));

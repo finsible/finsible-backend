@@ -19,6 +19,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,6 +39,9 @@ public class TransactionService {
     private final CategoryRepository categoryRepository;
     private final SupportedCurrencyRepository supportedCurrencyRepository;
     private final TransactionMapper transactionMapper;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public TransactionService(TransactionRepository transactionRepository, AccountRepository accountRepository,
                             CategoryRepository categoryRepository, TransactionMapper transactionMapper, SupportedCurrencyRepository supportedCurrencyRepository) {
@@ -238,12 +243,17 @@ public class TransactionService {
             }
 
             int missingCount = chunkIds.size() - transactions.size();
-            if(missingCount > 0) {
+            if (missingCount > 0) {
                 logger.warn("Some transactions not found for deletion for user {}. Not found ids count: {}", userId, missingCount);
             }
 
             applyDeletionBalanceDeltas(transactions);
             transactionRepository.deleteAllInBatch(transactions);
+
+            // Keep persistence context bounded for large bulk requests.
+            entityManager.flush();
+            entityManager.clear();
+
             deletedCount += transactions.size();
         }
 
@@ -279,23 +289,27 @@ public class TransactionService {
             return;
         }
 
+        List<Account> accountsToUpdate = new ArrayList<>();
         for (Map.Entry<Long, BigDecimal> entry : deltaByAccountId.entrySet()) {
             Long accountId = entry.getKey();
-            Account account = accountById.get(accountId);
-            if (account == null) {
-                throw new EntityNotFoundException("Account not found with id: " + accountId);
+            BigDecimal delta = entry.getValue();
+            // Skip accounts whose net delta is zero to avoid unnecessary DB writes
+            if (delta == null || delta.compareTo(BigDecimal.ZERO) == 0) {
+                continue;
             }
-
+            Account account = accountById.get(accountId);
             BigDecimal oldBalance = account.getBalance();
-            BigDecimal newBalance = oldBalance.add(entry.getValue());
+            BigDecimal newBalance = oldBalance.add(delta);
             account.setBalance(newBalance);
-            if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
+            if (newBalance.compareTo(BigDecimal.ZERO) < 0)
                 logger.warn("Account {} balance will go negative ({} -> {}). Consider reviewing overdraft policy.",
                         accountId, oldBalance, newBalance);
-            }
+            accountsToUpdate.add(account);
         }
-
-        accountRepository.saveAll(new ArrayList<>(accountById.values()));
+        if (accountsToUpdate.isEmpty()) {
+            return;
+        }
+        accountRepository.saveAll(accountsToUpdate);
     }
 
     private void addDeletionDelta(Transaction transaction, Map<Long, BigDecimal> deltaByAccountId) {
