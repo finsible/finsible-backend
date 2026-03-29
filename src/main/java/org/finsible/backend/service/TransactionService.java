@@ -19,18 +19,29 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class TransactionService {
     private static final Logger logger = LoggerFactory.getLogger(TransactionService.class);
+    private static final int BULK_DELETE_CHUNK_SIZE = 500;
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
     private final CategoryRepository categoryRepository;
     private final SupportedCurrencyRepository supportedCurrencyRepository;
     private final TransactionMapper transactionMapper;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public TransactionService(TransactionRepository transactionRepository, AccountRepository accountRepository,
                             CategoryRepository categoryRepository, TransactionMapper transactionMapper, SupportedCurrencyRepository supportedCurrencyRepository) {
@@ -206,22 +217,130 @@ public class TransactionService {
     }
 
     @Transactional
+    public void deleteTransactions(String userId, List<Long> transactionIds) {
+        if (transactionIds == null || transactionIds.isEmpty()) {
+            logger.info("Bulk delete requested with empty transaction id list for user {}", userId);
+            return;
+        }
+
+        List<Long> normalizedIds = transactionIds.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.collectingAndThen(Collectors.toCollection(LinkedHashSet::new), ArrayList::new));
+
+        if (normalizedIds.isEmpty()) {
+            logger.info("Bulk delete requested with only null ids for user {}", userId);
+            return;
+        }
+
+        int deletedCount = 0;
+        for (int start = 0; start < normalizedIds.size(); start += BULK_DELETE_CHUNK_SIZE) {
+            int end = Math.min(start + BULK_DELETE_CHUNK_SIZE, normalizedIds.size());
+            List<Long> chunkIds = normalizedIds.subList(start, end);
+
+            List<Transaction> transactions = transactionRepository.findAllByIdInAndCreatedByWithAccounts(chunkIds, userId);
+            if (transactions.isEmpty()) {
+                continue;
+            }
+
+            int missingCount = chunkIds.size() - transactions.size();
+            if (missingCount > 0) {
+                logger.warn("Some transactions not found for deletion for user {}. Not found ids count: {}", userId, missingCount);
+            }
+
+            applyDeletionBalanceDeltas(transactions);
+            transactionRepository.deleteAllInBatch(transactions);
+
+            // Keep persistence context bounded for large bulk requests.
+            entityManager.flush();
+            entityManager.clear();
+
+            deletedCount += transactions.size();
+        }
+
+        logger.info("Bulk delete completed for user {}. Requested: {}, Deleted: {}",
+                userId, normalizedIds.size(), deletedCount);
+    }
+
+    @Transactional
     public void deleteTransaction(String userId, Long transactionId) {
         Transaction transaction = transactionRepository.findByIdAndCreatedBy(transactionId, userId)
                 .orElseThrow(() -> new EntityNotFoundException("Transaction not found with id: " + transactionId));
 
-        BigDecimal totalAmount = transaction.getTotalAmount();
-        if (transaction.getType() == Type.INCOME) {
-            updateAccountBalance(transaction.getToAccount(), totalAmount, false);
-        } else if (transaction.getType() == Type.EXPENSE) {
-            updateAccountBalance(transaction.getFromAccount(), totalAmount, true);
-        } else if (transaction.getType() == Type.TRANSFER) {
-            updateAccountBalance(transaction.getFromAccount(), totalAmount, true);
-            updateAccountBalance(transaction.getToAccount(), totalAmount, false);
-        }
-
+        applyDeletionBalanceDeltas(List.of(transaction));
         transactionRepository.delete(transaction);
         logger.info("Deleted transaction with id: {}", transactionId);
+    }
+
+    private void applyDeletionBalanceDeltas(List<Transaction> transactions) {
+        Map<Long, BigDecimal> deltaByAccountId = new HashMap<>();
+        Map<Long, Account> accountById = new HashMap<>();
+
+        for (Transaction transaction : transactions) {
+            addDeletionDelta(transaction, deltaByAccountId);
+            if (transaction.getFromAccount() != null && transaction.getFromAccount().getId() != null) {
+                accountById.putIfAbsent(transaction.getFromAccount().getId(), transaction.getFromAccount());
+            }
+            if (transaction.getToAccount() != null && transaction.getToAccount().getId() != null) {
+                accountById.putIfAbsent(transaction.getToAccount().getId(), transaction.getToAccount());
+            }
+        }
+
+        if (deltaByAccountId.isEmpty()) {
+            return;
+        }
+
+        List<Account> accountsToUpdate = new ArrayList<>();
+        for (Map.Entry<Long, BigDecimal> entry : deltaByAccountId.entrySet()) {
+            Long accountId = entry.getKey();
+            BigDecimal delta = entry.getValue();
+            // Skip accounts whose net delta is zero to avoid unnecessary DB writes
+            if (delta == null || delta.compareTo(BigDecimal.ZERO) == 0) {
+                continue;
+            }
+            Account account = accountById.get(accountId);
+            BigDecimal oldBalance = account.getBalance();
+            BigDecimal newBalance = oldBalance.add(delta);
+            account.setBalance(newBalance);
+            if (newBalance.compareTo(BigDecimal.ZERO) < 0)
+                logger.warn("Account {} balance will go negative ({} -> {}). Consider reviewing overdraft policy.",
+                        accountId, oldBalance, newBalance);
+            accountsToUpdate.add(account);
+        }
+        if (accountsToUpdate.isEmpty()) {
+            return;
+        }
+        accountRepository.saveAll(accountsToUpdate);
+    }
+
+    private void addDeletionDelta(Transaction transaction, Map<Long, BigDecimal> deltaByAccountId) {
+        BigDecimal amount = transaction.getTotalAmount();
+        switch (transaction.getType()) {
+            case INCOME -> {
+                Long toAccountId = getRequiredAccountId(transaction.getToAccount(), "toAccount", transaction.getId());
+                mergeDelta(deltaByAccountId, toAccountId, amount.negate());
+            }
+            case EXPENSE -> {
+                Long fromAccountId = getRequiredAccountId(transaction.getFromAccount(), "fromAccount", transaction.getId());
+                mergeDelta(deltaByAccountId, fromAccountId, amount);
+            }
+            case TRANSFER -> {
+                Long fromAccountId = getRequiredAccountId(transaction.getFromAccount(), "fromAccount", transaction.getId());
+                Long toAccountId = getRequiredAccountId(transaction.getToAccount(), "toAccount", transaction.getId());
+                mergeDelta(deltaByAccountId, fromAccountId, amount);
+                mergeDelta(deltaByAccountId, toAccountId, amount.negate());
+            }
+        }
+    }
+
+    private Long getRequiredAccountId(Account account, String fieldName, Long transactionId) {
+        if (account == null || account.getId() == null) {
+            throw new EntityNotFoundException("Invalid transaction data. Missing " + fieldName + " for transaction id: " + transactionId);
+        }
+        return account.getId();
+    }
+
+    private void mergeDelta(Map<Long, BigDecimal> deltaByAccountId, Long accountId, BigDecimal delta) {
+        deltaByAccountId.merge(accountId, delta, BigDecimal::add);
     }
 
     private void handleAmountChange(Transaction transaction, BigDecimal amountDifference) {
