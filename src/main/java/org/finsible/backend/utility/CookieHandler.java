@@ -19,8 +19,8 @@ public class CookieHandler {
     public static final String AUTH_STATUS_COOKIE_NAME = "is_authenticated";
 
     // Default expiry times
-    public static final int JWT_EXPIRY_SECONDS = 15552000; // 180 days
-    public static final int AUTH_STATUS_EXPIRY_SECONDS = 15552000; // 180 days
+    public static final int JWT_EXPIRY_SECONDS = (int) (Long.parseLong(System.getenv("JWT_EXPIRATION")) / 1000);
+    public static final int AUTH_STATUS_EXPIRY_SECONDS = JWT_EXPIRY_SECONDS;
 
     @Value("${app.cookie.secure:true}")
     private boolean secure;

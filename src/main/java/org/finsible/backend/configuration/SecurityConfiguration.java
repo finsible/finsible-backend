@@ -36,7 +36,15 @@ public class SecurityConfiguration { //middleware
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 //browsers do not automatically add custom HTTP headers like Authorization: Bearer <token> to cross-origin requests.
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/sign-in/google-code", "/auth/sign-in/google", "/actuator/**", "/health").permitAll() // Allow authentication endpoints
+                        .requestMatchers(
+                                "/auth/sign-in/google-code",
+                                "/auth/sign-in/google",
+                                "/actuator/health",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/openapi.yaml"
+                        ).permitAll() // Allow authentication and documentation endpoints
                         .anyRequest().authenticated() // Protect other endpoints
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -51,8 +59,8 @@ public class SecurityConfiguration { //middleware
 
         // Allow specific origins
         configuration.setAllowedOriginPatterns(Arrays.asList(
-                "http://localhost:5173",
-                "http://127.0.0.1:5173"
+                "http://localhost:*",
+                "http://127.0.0.1:*"
         ));
 
         // Allow specific methods

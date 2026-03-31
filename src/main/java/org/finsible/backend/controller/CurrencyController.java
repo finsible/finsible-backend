@@ -37,7 +37,7 @@ public class CurrencyController {
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    @PostMapping("/")
+    @PostMapping
     public ResponseEntity<BaseResponse<CurrencyResponseDTO>> createSupportedCurrency(@Valid @RequestBody CurrencyRequestDTO currencyRequestDTO) {
         CurrencyResponseDTO responseDTO = currencyService.createSupportedCurrency(currencyRequestDTO);
         return ResponseEntity.ok(new BaseResponse<>("Successfully added new supported currency", true, responseDTO));

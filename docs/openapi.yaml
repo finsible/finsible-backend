@@ -1,0 +1,1510 @@
+openapi: 3.0.3
+info:
+  title: Finsible - Personal Finance Management API
+  description: |
+    RESTful API for personal finance management including transaction tracking,
+    account management, categorization, and multi-currency support.
+    
+    ## Authentication
+    
+    All endpoints except authentication endpoints require a valid JWT token.
+    
+    - **Web clients**: JWT is stored in an HttpOnly cookie
+    - **Mobile clients**: JWT is returned in the response body and should be sent via Authorization header
+    
+    ## Response Format
+    
+    All responses follow a standard format:
+    ```json
+    {
+      "message": "Description",
+      "success": true/false,
+      "timestamp": "2025-01-31 12:00:00",
+      "data": { ... }
+    }
+    ```
+  version: 0.0.1-SNAPSHOT
+  contact:
+    name: Finsible Support
+    email: maitrymakwana196@gmail.com
+
+servers:
+  - url: http://localhost:9090
+    description: Development server
+  - url: https://api.finsible.org
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication and session management
+  - name: Accounts
+    description: Financial account management
+  - name: Account Groups
+    description: Account type groupings
+  - name: Transactions
+    description: Income, expense, and transfer transactions
+  - name: Categories
+    description: Transaction categorization
+  - name: Currencies
+    description: Supported currencies management
+  - name: Languages
+    description: Supported languages management
+
+paths:
+  /auth/sign-in/google:
+    post:
+      tags:
+        - Authentication
+      summary: Sign in with Google ID token
+      description: Authenticate using a Google ID token obtained from Google Sign-In
+      parameters:
+        - name: deviceType
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [web, mobile]
+          description: Client device type (determines token delivery method)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserAuthenticationRequest'
+      responses:
+        '200':
+          description: Successfully authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/sign-in/google-code:
+    post:
+      tags:
+        - Authentication
+      summary: Sign in with Google authorization code
+      description: Authenticate using a Google authorization code (OAuth flow)
+      parameters:
+        - name: deviceType
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [web, mobile]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserAuthenticationRequest'
+      responses:
+        '200':
+          description: Successfully authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user profile
+      description: Retrieve the authenticated user's profile information
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: deviceType
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [web, mobile]
+      responses:
+        '200':
+          description: User profile retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/sign-out:
+    post:
+      tags:
+        - Authentication
+      summary: Sign out
+      description: Sign out the current user and clear authentication
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: deviceType
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [web, mobile]
+      responses:
+        '200':
+          description: Successfully signed out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+
+  /accounts:
+    get:
+      tags:
+        - Accounts
+      summary: List all accounts
+      description: Get all accounts for the authenticated user
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Accounts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /accounts/{accountGroupId}:
+    post:
+      tags:
+        - Accounts
+      summary: Create a new account
+      description: Create a new account under the specified account group
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: accountGroupId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ID of the account group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountRequest'
+      responses:
+        '200':
+          description: Account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /accounts/{accountId}:
+    put:
+      tags:
+        - Accounts
+      summary: Update an account
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountRequest'
+      responses:
+        '200':
+          description: Account updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+    delete:
+      tags:
+        - Accounts
+      summary: Delete an account
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Account deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+
+  /accounts/credit-card:
+    post:
+      tags:
+        - Accounts
+      summary: Create a credit card account
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreditCardAccountRequest'
+      responses:
+        '200':
+          description: Credit card account created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+
+  /accounts/credit-card/{accountId}:
+    put:
+      tags:
+        - Accounts
+      summary: Update a credit card account
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreditCardAccountRequest'
+      responses:
+        '200':
+          description: Credit card account updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+
+  /accounts/debit-card:
+    post:
+      tags:
+        - Accounts
+      summary: Create a debit card account
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DebitCardAccountRequest'
+      responses:
+        '200':
+          description: Debit card account created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+
+  /accounts/debit-card/{accountId}:
+    put:
+      tags:
+        - Accounts
+      summary: Update a debit card account
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DebitCardAccountRequest'
+      responses:
+        '200':
+          description: Debit card account updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+
+  /account-groups:
+    get:
+      tags:
+        - Account Groups
+      summary: List all account groups
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Account groups retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountGroupListResponse'
+    post:
+      tags:
+        - Account Groups
+      summary: Create an account group
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountGroupRequest'
+      responses:
+        '200':
+          description: Account group created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountGroupResponse'
+
+  /account-groups/{accountGroupId}:
+    put:
+      tags:
+        - Account Groups
+      summary: Update an account group
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: accountGroupId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountGroupRequest'
+      responses:
+        '200':
+          description: Account group updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountGroupResponse'
+    delete:
+      tags:
+        - Account Groups
+      summary: Delete an account group
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: accountGroupId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Account group deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+
+  /transactions:
+    get:
+      tags:
+        - Transactions
+      summary: List transactions
+      description: Get paginated list of transactions with optional filters
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: startDate
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: Start date filter (epoch milliseconds)
+        - name: endDate
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: End date filter (epoch milliseconds)
+        - name: accountId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: accountGroupId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: categoryId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [INCOME, EXPENSE, TRANSFER]
+      responses:
+        '200':
+          description: Transactions retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionPageResponse'
+    post:
+      tags:
+        - Transactions
+      summary: Create a transaction
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+      responses:
+        '200':
+          description: Transaction created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+
+  /transactions/{id}:
+    get:
+      tags:
+        - Transactions
+      summary: Get transaction by ID
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Transaction retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+    put:
+      tags:
+        - Transactions
+      summary: Update a transaction
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+      responses:
+        '200':
+          description: Transaction updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+    delete:
+      tags:
+        - Transactions
+      summary: Delete a transaction
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Transaction deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+
+  /categories:
+    get:
+      tags:
+        - Categories
+      summary: List categories
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [INCOME, EXPENSE]
+      responses:
+        '200':
+          description: Categories retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListResponse'
+    post:
+      tags:
+        - Categories
+      summary: Create a user category
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+      responses:
+        '200':
+          description: Category created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+
+  /categories/{id}:
+    put:
+      tags:
+        - Categories
+      summary: Update a category
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+      responses:
+        '200':
+          description: Category updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+    delete:
+      tags:
+        - Categories
+      summary: Delete a category
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Category deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+
+  /categories/default:
+    post:
+      tags:
+        - Categories
+      summary: Create a default category (Admin only)
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+      responses:
+        '200':
+          description: Default category created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '403':
+          description: Forbidden - Admin role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /categories/default/{id}:
+    put:
+      tags:
+        - Categories
+      summary: Update a default category (Admin only)
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+      responses:
+        '200':
+          description: Default category updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+    delete:
+      tags:
+        - Categories
+      summary: Delete a default category (Admin only)
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Default category deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+
+  /supported-currencies:
+    get:
+      tags:
+        - Currencies
+      summary: List supported currencies
+      responses:
+        '200':
+          description: Currencies retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrencyListResponse'
+    post:
+      tags:
+        - Currencies
+      summary: Add a supported currency (Admin only)
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CurrencyRequest'
+      responses:
+        '200':
+          description: Currency added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrencyResponse'
+
+  /supported-currencies/{code}:
+    get:
+      tags:
+        - Currencies
+      summary: Get currency by code
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ISO 4217 currency code
+      responses:
+        '200':
+          description: Currency retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrencyResponse'
+
+  /supported-currencies/{id}:
+    delete:
+      tags:
+        - Currencies
+      summary: Remove a supported currency (Admin only)
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Currency removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+
+  /supported-languages:
+    get:
+      tags:
+        - Languages
+      summary: List supported languages
+      responses:
+        '200':
+          description: Languages retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LanguageListResponse'
+    post:
+      tags:
+        - Languages
+      summary: Add a supported language (Admin only)
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LanguageRequest'
+      responses:
+        '200':
+          description: Language added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LanguageResponse'
+
+  /supported-languages/{code}:
+    get:
+      tags:
+        - Languages
+      summary: Get language by code
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Language retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LanguageResponse'
+
+  /supported-languages/{id}:
+    delete:
+      tags:
+        - Languages
+      summary: Remove a supported language (Admin only)
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Language removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token in Authorization header
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: jwt_token
+      description: JWT token in HttpOnly cookie
+
+  schemas:
+    BaseResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        success:
+          type: boolean
+        timestamp:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        success:
+          type: boolean
+        timestamp:
+          type: string
+        data:
+          $ref: '#/components/schemas/ErrorDetails'
+
+    ErrorDetails:
+      type: object
+      properties:
+        status:
+          type: integer
+        message:
+          type: string
+        referenceId:
+          type: string
+
+    UserAuthenticationRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Google ID token (for token-based auth)
+        code:
+          type: string
+          description: Google auth code (for code-based auth)
+        clientId:
+          type: string
+          description: Google OAuth client ID
+        defaultCurrencyCode:
+          type: string
+          minLength: 3
+          maxLength: 3
+          example: INR
+        defaultLanguageCode:
+          type: string
+          example: en
+      required:
+        - clientId
+        - defaultCurrencyCode
+        - defaultLanguageCode
+
+    UserResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/UserData'
+
+    UserData:
+      type: object
+      properties:
+        isNewUser:
+          type: boolean
+        userId:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        picture:
+          type: string
+          format: uri
+        accountCreated:
+          type: string
+          format: date-time
+        lastLoggedIn:
+          type: string
+          format: date-time
+        jwt:
+          type: string
+          description: JWT token (only for mobile clients)
+        defaultCurrencyCode:
+          type: string
+        defaultCurrencySymbol:
+          type: string
+        defaultLanguageCode:
+          type: string
+
+    AccountRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 255
+        icon:
+          type: string
+          maxLength: 255
+        balance:
+          type: number
+          format: decimal
+        currencyCode:
+          type: string
+          minLength: 3
+          maxLength: 3
+        isActive:
+          type: boolean
+        isSystemDefault:
+          type: boolean
+
+    AccountResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AccountData'
+
+    AccountData:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        balance:
+          type: string
+        accountGroupId:
+          type: integer
+          format: int64
+        icon:
+          type: string
+        currencyCode:
+          type: string
+        isActive:
+          type: boolean
+        isSystemDefault:
+          type: boolean
+        creditLimit:
+          type: string
+        availableCredit:
+          type: string
+        billingDate:
+          type: integer
+        dueDate:
+          type: integer
+        autoPayEnabled:
+          type: boolean
+        autoPayFromAccountId:
+          type: integer
+          format: int64
+        linkedBankAccountId:
+          type: integer
+          format: int64
+
+    AccountListResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/AccountData'
+
+    CreditCardAccountRequest:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/AccountRequest'
+        - type: object
+          properties:
+            creditLimit:
+              type: number
+              format: decimal
+            availableCredit:
+              type: number
+              format: decimal
+            billingDate:
+              type: integer
+              minimum: 1
+              maximum: 31
+            dueDate:
+              type: integer
+              minimum: 1
+              maximum: 31
+            autoPayEnabled:
+              type: boolean
+            autoPayFromAccountId:
+              type: integer
+              format: int64
+
+    DebitCardAccountRequest:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/AccountRequest'
+        - type: object
+          properties:
+            linkedBankAccountId:
+              type: integer
+              format: int64
+          required:
+            - linkedBankAccountId
+
+    AccountGroupRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 255
+        icon:
+          type: string
+          maxLength: 255
+        color:
+          type: string
+          maxLength: 25
+        displayOrder:
+          type: integer
+        isSystemDefault:
+          type: boolean
+
+    AccountGroupResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AccountGroupData'
+
+    AccountGroupData:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        color:
+          type: string
+        isSystemDefault:
+          type: boolean
+
+    AccountGroupListResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/AccountGroupData'
+
+    TransactionRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [INCOME, EXPENSE, TRANSFER]
+        totalAmount:
+          type: number
+          format: decimal
+        transactionDate:
+          type: integer
+          format: int64
+          description: Epoch milliseconds
+        categoryId:
+          type: integer
+          format: int64
+        toAccountId:
+          type: integer
+          format: int64
+          description: Used for INCOME and TRANSFER
+        fromAccountId:
+          type: integer
+          format: int64
+          description: Used for EXPENSE and TRANSFER
+        description:
+          type: string
+          maxLength: 255
+        spaceId:
+          type: integer
+          format: int64
+        userShare:
+          type: number
+          format: decimal
+        isSplit:
+          type: boolean
+        paidByUserId:
+          type: integer
+          format: int64
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+
+    TransactionResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/TransactionData'
+
+    TransactionData:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          type: string
+        totalAmount:
+          type: string
+        transactionDate:
+          type: string
+        categoryId:
+          type: integer
+          format: int64
+        categoryName:
+          type: string
+        description:
+          type: string
+        currency:
+          type: string
+        toAccountId:
+          type: integer
+          format: int64
+        toAccountName:
+          type: string
+        fromAccountId:
+          type: integer
+          format: int64
+        fromAccountName:
+          type: string
+        spaceId:
+          type: integer
+          format: int64
+        userShare:
+          type: string
+        isSplit:
+          type: boolean
+        paidByUserId:
+          type: integer
+          format: int64
+        paidByUserName:
+          type: string
+
+    TransactionPageResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                content:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/TransactionData'
+                pageable:
+                  type: object
+                  properties:
+                    pageNumber:
+                      type: integer
+                    pageSize:
+                      type: integer
+                totalElements:
+                  type: integer
+                  format: int64
+                totalPages:
+                  type: integer
+
+    CategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        icon:
+          type: string
+          maxLength: 255
+        type:
+          type: string
+          enum: [INCOME, EXPENSE]
+        isSubCategory:
+          type: boolean
+        parentCategoryId:
+          type: integer
+          format: int64
+
+    CategoryResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/CategoryData'
+
+    CategoryData:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        icon:
+          type: string
+        type:
+          type: string
+          enum: [INCOME, EXPENSE]
+        isSubCategory:
+          type: boolean
+        parentCategoryId:
+          type: integer
+          format: int64
+
+    CategoryListResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/CategoryData'
+
+    CurrencyRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 3
+          maxLength: 3
+        name:
+          type: string
+          maxLength: 100
+        symbol:
+          type: string
+          maxLength: 10
+      required:
+        - code
+        - name
+        - symbol
+
+    CurrencyResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/CurrencyData'
+
+    CurrencyData:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        code:
+          type: string
+        name:
+          type: string
+        symbol:
+          type: string
+
+    CurrencyListResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/CurrencyData'
+
+    LanguageRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 10
+        name:
+          type: string
+          maxLength: 100
+      required:
+        - code
+        - name
+
+    LanguageResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/LanguageData'
+
+    LanguageData:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        code:
+          type: string
+        name:
+          type: string
+
+    LanguageListResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/LanguageData'
